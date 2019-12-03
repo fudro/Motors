@@ -1,6 +1,7 @@
 /*************************
- * This program uses an Arduino Uno and an Adafruit Motorshield V1 to control a DC motor.
- * Motor rotation is tracked using hardware interrupts and a custom encoder module.
+ * This program demonstrates basic encoder based otoro control of a DC motor.
+ * The hardware setup uses an Arduino Uno and an Adafruit Motorshield V1.
+ * Motor rotation is tracked using a custom encoder module and hardware interrupt pins on the Arduino.
  * 
  * HARDWARE SETUP:
  * 1) Power sensor module using 3.3v
@@ -33,13 +34,14 @@ float slots = 1.00; //Number of slots in encoder disc. Used to track rotation an
 /**************INTERRUPT SERVICE ROUTINES******************/
 void ISR_encoder2() {   //Track hardware interrupts on pin 2
   encoder2++;
+  Serial.println(encoder2);
 }
 
 void ISR_encoder3() {   //Track hardware interrupts on pin 3
   encoder3++;
 }
 
-//Use a timer based interrupt to display encoder stats
+//A timer-based interrupt can be used to display encoder stats (OPTIONAL)
 void ISR_timerone() {
   Timer1.detachInterrupt();   //Stop Timer1 to allow time for serial print out
   Serial.print("Encoder 2: ");
@@ -50,7 +52,7 @@ void ISR_timerone() {
   float rotation3 = (encoder3 / slots) * 1.00;
   Serial.print(encoder3);
   Serial.println(" ");
-//  Timer1.attachInterrupt(ISR_timerone);   //Restart timer after printing is complete. (Timer-based interrupt can be disabled by commenting out this "attachInterrupt" statement.)
+  Timer1.attachInterrupt(ISR_timerone);   //Restart timer after printing is complete.
 }
  /*************END INTERRUPT SERVICE ROUTINES*************/
 
@@ -70,24 +72,32 @@ void setup() {
   pinMode(M4, INPUT);  //Activate pullup resistors on the hardware interrupt pins
   pinMode(M3, INPUT_PULLUP);
 
-  //Setup interrupts
+  //Setup hardware interrupt ISRs
   attachInterrupt(digitalPinToInterrupt(M4), ISR_encoder2, HIGH);   //Attach interrupt service routines to hardware interrupt pins and set trigger mode.
   attachInterrupt(digitalPinToInterrupt(M3), ISR_encoder3, HIGH);
-  Timer1.initialize(1000000);   //Set timer for timer-based interrupt. Timer1 accepts parameter in microseconds. Set to one million for 1 second.
-  Timer1.attachInterrupt(ISR_timerone);   //Enable the timer-based interrupt by attaching the interrupt service routine.
+
+  //Setup timer-based interrupts (NOTE: Comment out these statements if the timer-based interrupt is not required.)
+//  Timer1.initialize(1000000);   //Set timer for timer-based interrupt. Timer1 accepts parameter in microseconds. Set to one million for 1 second.
+//  Timer1.attachInterrupt(ISR_timerone);   //Enable the timer-based interrupt by attaching the interrupt service routine.
 }
 
 void loop() {
   while(encoder2 < 200 && encoder2 != 0) {   //Set target encoder value
-    motor4.run(FORWARD);       //Start motors in the desired directions.
+    motor4.run(BACKWARD);       //Start motors in the desired directions.
     motor3.run(BACKWARD);
   }
   if(encoder2 != 0) {           //Once encoder threshold has been reached, make sure encoder has moved...
-    motor4.run(BACKWARD);      //...then reverse direction of each motor to brake momentarily
+    motor4.run(FORWARD);      //...then reverse direction of each motor for a brief amount of time to brake
     motor3.run(FORWARD);
-    delay(10);
+    delay(15);                 
+    /*NOTE: The delay value is the braking delay and may need to be adjusted to get best results. 
+     * Too little time will allow the motors to coast after braking while too much time will cause the motors to reverse after braking. 
+     *Since the encoder doesn't care which direction the motor is turning, both sceanrios can cause the encoder value to increase slightly beyond the desired stop value.)
+     */
     motor4.run(RELEASE);
     motor3.run(RELEASE);
+    Serial.println("STOP!");
+    delay(1000);              //Pause to give motors enough time to settle and truly stop before resetting encoder values
     encoder2 = 0;
     encoder3 = 0;
   }
