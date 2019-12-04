@@ -1,0 +1,14 @@
+ARM POTENTIOMETER LIMITS
+--------------------------------------------------------------
+COMPONENT		DIRECTION		LIMIT VALUE
+--------------------------------------------------------------
+Shoulder		Down			750 (Ablolute Max)
+Shoulder		Up			250 (Absolute Max)
+Shoulder		Down			700 (Recommended)
+Shoulder		Up			300 (Recommended)
+Elbow			Up			700 (Absolute Max - Due to potentiometer cable - mechanically can go to 900)
+Elbow			Down			0   (Absolutue Max - potentiometer stops just short of mechanically binding)
+Elbow			Up			700 (Recommended - prevents potentiometer camble binding)
+Elbow			Down			50  (Recommended)
+Elbow			--			80  (Straight Alignment of Whole Arm)
+Elbow			--			475 (Perpendicular Alignment of Shoulder and Elbow Arm Sections)
