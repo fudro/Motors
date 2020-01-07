@@ -1,6 +1,0 @@
-INTERRUPT MODE		PIN SETTING	SENSOR PIN	RATING		NOTES
-----------------------------------------------------------------------------------
-HIGH			INPUT		D0		BEST		increments when LED turns ON and OFF
-FALLING			INPUT		D0		POOR		increments when LED turns ON, does nothing when LED turns OFF, sometimes double counts 
-RISING			INPUT		D0		FAIR		increments when LED turns OFF, sometimes will also increment when LED turns ON	
-CHANGE			INPUT		D0		GOOD		increments when LED turns ON and OFF, sometimes double counts when LED turns ON
