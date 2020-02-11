@@ -1,10 +1,10 @@
 /*************************
- * This program demonstrates basic encoder based otoro control of a DC motor.
+ * This program demonstrates basic encoder based control of a DC motor.
  * The hardware setup uses an Arduino Uno and an Adafruit Motorshield V1.
  * Motor rotation is tracked using a custom encoder module and hardware interrupt pins on the Arduino.
  * 
  * HARDWARE SETUP:
- * 1) Power sensor module using 3.3v
+ * 1) Power encoder module using 3.3v
  * 2) Connect the digital (D0) pin of the sensor module to the Arduino hardware interrupt pin.
  * 3) Set pinMode of hardware interrupt pins to INPUT (do NOT use INPUT-PULLUP)
  * 4) Set the interrupt mode to HIGH (This setting provides the best results and will activate the interrupt pin whenever the sensor LED turns ON or OFF).
