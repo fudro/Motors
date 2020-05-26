@@ -8,10 +8,10 @@
 
 #include "MeMegaPi.h"
 
-MeMegaPiDCMotor motor1(PORT1A);
-MeMegaPiDCMotor motor2(PORT1B);
+MeMegaPiDCMotor motor1(PORT2A);
+MeMegaPiDCMotor motor2(PORT2B);
 
-uint8_t motorSpeed = 125; /* value: between -255 and 255. */
+int motorSpeed = 125; /* value: between -255 and 255. */
 const byte MOTOR1 = A6;   //assign analog pins to each motor
 const byte MOTOR2 = A7;
 int encoder1 = 0;         //variables to count encoder disc "ticks" each time the encoder circuitry sends an interrupt pulse. 
@@ -24,16 +24,19 @@ int encoderTarget = 40;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  Serial.println("Encoder Test!!");
   pinMode(MOTOR1, INPUT);
   pinMode(MOTOR2, INPUT);
 }
 
 void loop() {
   motorTest();
-  delay(5000);
+  delay(500);
 }
 
 void motorTest() {
+  Serial.print("Motor Speed: ");
+  Serial.println(motorSpeed);
   moving = true;
   motor1.run(motorSpeed);
   motor2.run(motorSpeed);
@@ -43,6 +46,7 @@ void motorTest() {
   motor1.stop();
   motor2.stop();
   resetEncoders();
+  motorSpeed = motorSpeed * -1;   //Reverse direction
   moving = false;
 }
 
