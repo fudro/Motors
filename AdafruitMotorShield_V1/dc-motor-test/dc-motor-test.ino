@@ -7,14 +7,14 @@
 
 #include <AFMotor.h>
 
-AF_DCMotor motor(1);    //Create motor object and set motor port (1-4)
+AF_DCMotor motor(3);    //Create motor object and set motor port (1-4)
 
 void setup() {
-  Serial.begin(9600);           // set up Serial library at 9600 bps
+  Serial.begin(115200);           // set up Serial library at 9600 bps
   Serial.println("DC Motor test!");
 
   // turn on motor
-  motor.setSpeed(200);  //Set default motor speed. Speeds allowed from 0 to 255.
+  motor.setSpeed(255);  //Set default motor speed. Speeds allowed from 0 to 255.
   motor.run(RELEASE);   //Reset the motor (clear any previous commands) by "releasing" it.
 }
 
@@ -26,6 +26,7 @@ void loop() {
     motor.setSpeed(i);  
     delay(10);
  }
+ delay (5000);
  
   for (i=255; i!=0; i--) {  //Ramp down speed.
     motor.setSpeed(i);  
