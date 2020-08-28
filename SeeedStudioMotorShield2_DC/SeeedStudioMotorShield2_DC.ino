@@ -16,15 +16,15 @@ void loop()
 {
     motor.speed(0, 100);            // set motor0 to speed 100
     motor.speed(1, 100);
-    delay(1000);
+    delay(3000);
     motor.brake(0);                 // brake
     motor.brake(1);
-    delay(1000);
+    delay(2000);
     motor.speed(0, -100);           // set motor0 to speed -100
     motor.speed(1, -100);
-    delay(1000);
+    delay(3000);
     motor.stop(0);                  // stop
     motor.stop(1);
-    delay(1000);
+    delay(2000);
 }
 // END FILE
