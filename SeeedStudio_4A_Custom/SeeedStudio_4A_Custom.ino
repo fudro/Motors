@@ -27,8 +27,8 @@ int OUT1 = 5;
 int OUT2 = 6;
 int OUT3 = 7;
 int OUT4 = 8;
-int speed_left = 255;
-int speed_right = 255;
+int speed_left = 50;
+int speed_right = 50;
 
 void setup() {
   Serial.begin(115200);
@@ -59,7 +59,7 @@ void loop() {
   digitalWrite(OUT2, LOW);
   digitalWrite(OUT3, HIGH);
   digitalWrite(OUT4, LOW);
-  delay(3000);
+  delay(10000);
 
   Serial.println("Stopped");
   digitalWrite(OUT1, LOW);
@@ -73,7 +73,7 @@ void loop() {
   digitalWrite(OUT2, HIGH);
   digitalWrite(OUT3, LOW);
   digitalWrite(OUT4, HIGH);
-  delay(3000);
+  delay(10000);
 
   Serial.println("Stopped");
   digitalWrite(OUT1, LOW);
@@ -82,31 +82,31 @@ void loop() {
   digitalWrite(OUT4, LOW);
   delay(2000);
 
-  Serial.println("Turn Left");
-  digitalWrite(OUT1, LOW);
-  digitalWrite(OUT2, HIGH);
-  digitalWrite(OUT3, HIGH);
-  digitalWrite(OUT4, LOW);
-  delay(3000);
-
-  Serial.println("Stopped");
-  digitalWrite(OUT1, LOW);
-  digitalWrite(OUT2, LOW);
-  digitalWrite(OUT3, LOW);
-  digitalWrite(OUT4, LOW);
-  delay(2000);
-
-  Serial.println("Turn Right");
-  digitalWrite(OUT1, HIGH);
-  digitalWrite(OUT2, LOW);
-  digitalWrite(OUT3, LOW);
-  digitalWrite(OUT4, HIGH);
-  delay(3000);
-
-  Serial.println("Stopped");
-  digitalWrite(OUT1, LOW);
-  digitalWrite(OUT2, LOW);
-  digitalWrite(OUT3, LOW);
-  digitalWrite(OUT4, LOW);
-  delay(2000);
+//  Serial.println("Turn Left");
+//  digitalWrite(OUT1, LOW);
+//  digitalWrite(OUT2, HIGH);
+//  digitalWrite(OUT3, HIGH);
+//  digitalWrite(OUT4, LOW);
+//  delay(3000);
+//
+//  Serial.println("Stopped");
+//  digitalWrite(OUT1, LOW);
+//  digitalWrite(OUT2, LOW);
+//  digitalWrite(OUT3, LOW);
+//  digitalWrite(OUT4, LOW);
+//  delay(2000);
+//
+//  Serial.println("Turn Right");
+//  digitalWrite(OUT1, HIGH);
+//  digitalWrite(OUT2, LOW);
+//  digitalWrite(OUT3, LOW);
+//  digitalWrite(OUT4, HIGH);
+//  delay(3000);
+//
+//  Serial.println("Stopped");
+//  digitalWrite(OUT1, LOW);
+//  digitalWrite(OUT2, LOW);
+//  digitalWrite(OUT3, LOW);
+//  digitalWrite(OUT4, LOW);
+//  delay(2000);
 }
