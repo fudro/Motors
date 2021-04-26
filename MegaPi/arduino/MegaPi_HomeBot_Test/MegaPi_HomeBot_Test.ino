@@ -57,40 +57,76 @@ void setup()
 
 void loop()
 {
-//  motor1.run(motorSpeed); /* value: between -255 and 255. */
-//  motor2.run(motorSpeed); /* value: between -255 and 255. */
+  motor1.run(motorSpeed); /* value: between -255 and 255. */
+  delay(500);
+  motor1.stop();
+  delay(500);
+  motor1.run(-motorSpeed);
+  delay(500);
+  motor1.stop();
+  delay(1000);
+  
+  motor2.run(motorSpeed);
+  delay(500);
+  motor2.stop();
+  delay(500);
+  motor2.run(-motorSpeed);
+  delay(500);
+  motor2.stop();
+  delay(1000);
+
   motor3.run(motorSpeed);
-//  motor4.run(motorSpeed);
-//  motor5.run(motorSpeed); /* value: between -255 and 255. */
-//  motor6.run(motorSpeed); /* value: between -255 and 255. */
-//  motor7.run(motorSpeed);
-//  motor8.run(motorSpeed);
   delay(500);
-//  motor1.stop();
-//  motor2.stop();
   motor3.stop();
-//  motor4.stop();
-//  motor5.stop();
-//  motor6.stop();
-//  motor7.stop();
-//  motor8.stop();
   delay(500);
-//  motor1.run(-motorSpeed);
-//  motor2.run(-motorSpeed);
   motor3.run(-motorSpeed);
-//  motor4.run(-motorSpeed);
-//  motor5.run(-motorSpeed);
-//  motor6.run(-motorSpeed);
-//  motor7.run(-motorSpeed);
-//  motor8.run(-motorSpeed);
   delay(500);
-//  motor1.stop();
-//  motor2.stop();
   motor3.stop();
-//  motor4.stop();
-//  motor5.stop();
-//  motor6.stop();
-//  motor7.stop();
-//  motor8.stop();
-  delay(3000);
+  delay(1000);
+
+  motor4.run(motorSpeed);
+  delay(500);
+  motor4.stop();
+  delay(500);
+  motor4.run(-motorSpeed);
+  delay(500);
+  motor4.stop();
+  delay(1000);
+
+  motor5.run(motorSpeed);
+  delay(500);
+  motor5.stop();
+  delay(500);
+  motor5.run(-motorSpeed);
+  delay(500);
+  motor5.stop();
+  delay(1000);
+
+  motor6.run(motorSpeed);
+  delay(500);
+  motor6.stop();
+  delay(500);
+  motor6.run(-motorSpeed);
+  delay(500);
+  motor6.stop();
+  delay(1000);
+
+  motor7.run(motorSpeed);
+  delay(500);
+  motor7.stop();
+  delay(500);
+  motor7.run(-motorSpeed);
+  delay(500);
+  motor7.stop();
+  delay(1000);
+
+  motor8.run(motorSpeed);
+  delay(500);
+  motor8.stop();
+  delay(500);
+  motor8.run(-motorSpeed);
+  delay(500);
+  motor8.stop();
+  delay(1000);
 }
+  
