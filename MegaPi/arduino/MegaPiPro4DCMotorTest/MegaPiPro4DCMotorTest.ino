@@ -43,15 +43,20 @@ uint8_t motorSpeed = 250;
 
 void setup()
 {
+  Serial.begin(115200);
+  Serial.println("MEGAPI PRO MOTOR TEST");
 }
 
 void loop()
 {
+  Serial.println("STARTING IN 3 SECONDS...");
+  delay(3000);
+  Serial.println("START!");
   motor1.run(motorSpeed); /* value: between -255 and 255. */
   motor2.run(motorSpeed); /* value: between -255 and 255. */
   motor3.run(motorSpeed);
   motor4.run(motorSpeed);
-  delay(2000);
+  delay(60000);
   motor1.stop();
   motor2.stop();
   motor3.stop();
@@ -66,5 +71,6 @@ void loop()
   motor2.stop();
   motor3.stop();
   motor4.stop();
-  delay(1000);
+  Serial.println("DONE!");
+  delay(3000);
 }

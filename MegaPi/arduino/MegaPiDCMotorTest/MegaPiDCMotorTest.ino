@@ -53,44 +53,50 @@ uint8_t motorSpeed = 100;
 
 void setup()
 {
+  Serial.begin(115200);
+  Serial.println("MEGAPI MOTOR TEST");
 }
 
 void loop()
 {
-//  motor1.run(motorSpeed); /* value: between -255 and 255. */
-//  motor2.run(motorSpeed); /* value: between -255 and 255. */
-  motor3.run(motorSpeed);
+  Serial.println("STARTING IN 3 SECONDS...");
+  delay(3000);
+  Serial.println("START!");
+  motor1.run(motorSpeed); /* value: between -255 and 255. */
+  motor2.run(motorSpeed); /* value: between -255 and 255. */
+//  motor3.run(motorSpeed);
 //  motor4.run(motorSpeed);
-//  motor5.run(motorSpeed); /* value: between -255 and 255. */
-//  motor6.run(motorSpeed); /* value: between -255 and 255. */
+//  motor5.run(motorSpeed);
+//  motor6.run(motorSpeed);
 //  motor7.run(motorSpeed);
 //  motor8.run(motorSpeed);
-  delay(500);
+  delay(60000);
 //  motor1.stop();
 //  motor2.stop();
-  motor3.stop();
+//  motor3.stop();
 //  motor4.stop();
 //  motor5.stop();
 //  motor6.stop();
 //  motor7.stop();
 //  motor8.stop();
-  delay(500);
+//  delay(1000);
 //  motor1.run(-motorSpeed);
 //  motor2.run(-motorSpeed);
-  motor3.run(-motorSpeed);
+//  motor3.run(-motorSpeed);
 //  motor4.run(-motorSpeed);
 //  motor5.run(-motorSpeed);
 //  motor6.run(-motorSpeed);
 //  motor7.run(-motorSpeed);
 //  motor8.run(-motorSpeed);
-  delay(500);
-//  motor1.stop();
-//  motor2.stop();
-  motor3.stop();
+//  delay(5000);
+  motor1.stop();
+  motor2.stop();
+//  motor3.stop();
 //  motor4.stop();
 //  motor5.stop();
 //  motor6.stop();
 //  motor7.stop();
 //  motor8.stop();
+  Serial.println("DONE!");
   delay(3000);
 }
