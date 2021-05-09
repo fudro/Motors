@@ -33,100 +33,137 @@
  */
 #include "MeMegaPi.h"
 
-MeMegaPiDCMotor motor1(PORT1A);
+MeMegaPiDCMotor motor1(PORT1A); //Arm Gripper
 
-MeMegaPiDCMotor motor2(PORT1B);
+MeMegaPiDCMotor motor2(PORT1B); //Wrist
 
-MeMegaPiDCMotor motor3(PORT2A);
+MeMegaPiDCMotor motor3(PORT2A); //Drive Left
 
-MeMegaPiDCMotor motor4(PORT2B);
+MeMegaPiDCMotor motor4(PORT2B); //Drive Right
 
-MeMegaPiDCMotor motor5(PORT3A);
+MeMegaPiDCMotor motor5(PORT3A); //Tail Gripper
 
-MeMegaPiDCMotor motor6(PORT3B);
+MeMegaPiDCMotor motor6(PORT3B); //Turntable
 
-MeMegaPiDCMotor motor7(PORT4A);
+MeMegaPiDCMotor motor7(PORT4A); //Elbow
 
-MeMegaPiDCMotor motor8(PORT4B);
+MeMegaPiDCMotor motor8(PORT4B); //Shoulder
 
 uint8_t motorSpeed = 100;
 
 void setup()
 {
+  Serial.begin(115200);
+  Serial.println("HomeBot Test!");
 }
 
 void loop()
 {
+  Serial.println("StartingTest in 3 seconds...");
+  delay(3000);
+  Serial.println("Arm Gripper...");
+  Serial.println("Arm Open");
   motor1.run(motorSpeed); /* value: between -255 and 255. */
   delay(500);
   motor1.stop();
   delay(500);
+  Serial.println("Arm Close");
   motor1.run(-motorSpeed);
   delay(500);
   motor1.stop();
+  Serial.print("\n");
   delay(1000);
-  
+
+  Serial.println("Wrist...");
+  Serial.println("Wrist Clockwise");
   motor2.run(motorSpeed);
   delay(500);
   motor2.stop();
   delay(500);
+  Serial.println("Wrist Counter-Clockwise");
   motor2.run(-motorSpeed);
   delay(500);
   motor2.stop();
+  Serial.print("\n");
   delay(1000);
 
+  Serial.println("Drive Left...");
+  Serial.println("Reverse");
   motor3.run(motorSpeed);
   delay(500);
   motor3.stop();
   delay(500);
+  Serial.println("Forward");
   motor3.run(-motorSpeed);
   delay(500);
   motor3.stop();
+  Serial.print("\n");
   delay(1000);
 
+  Serial.println("Drive Right...");
+  Serial.println("Reverse");
   motor4.run(motorSpeed);
   delay(500);
   motor4.stop();
   delay(500);
+  Serial.println("Forward");
   motor4.run(-motorSpeed);
   delay(500);
   motor4.stop();
+  Serial.print("\n");
   delay(1000);
 
+  Serial.println("Tail Gripper...");
+  Serial.println("Tail Close");
   motor5.run(motorSpeed);
   delay(500);
   motor5.stop();
   delay(500);
+  Serial.println("Tail Open");
   motor5.run(-motorSpeed);
   delay(500);
   motor5.stop();
+  Serial.print("\n");
   delay(1000);
 
+  Serial.println("Turntable...");
+  Serial.println("Turntable Counter-Clockwise");
   motor6.run(motorSpeed);
   delay(500);
   motor6.stop();
   delay(500);
+  Serial.println("Turntable Clockwise");
   motor6.run(-motorSpeed);
   delay(500);
   motor6.stop();
+  Serial.print("\n");
   delay(1000);
 
+  Serial.println("Elbow...");
+  Serial.println("Elbow Up");
   motor7.run(motorSpeed);
   delay(500);
   motor7.stop();
   delay(500);
+  Serial.println("Elbow Down");
   motor7.run(-motorSpeed);
   delay(500);
   motor7.stop();
+  Serial.print("\n");
   delay(1000);
 
+  Serial.println("Shoulder...");
+  Serial.println("Shoulder Down");
   motor8.run(motorSpeed);
   delay(500);
   motor8.stop();
   delay(500);
+  Serial.println("Shoulder Up");
   motor8.run(-motorSpeed);
   delay(500);
   motor8.stop();
+  Serial.print("\n");
+  Serial.print("\n");
   delay(1000);
 }
   
