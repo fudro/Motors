@@ -50,6 +50,8 @@ const int HORIZONTAL = 0;
 const int VERTICAL = 1;
 const int CW = 0;
 const int CCW = 1;
+const int WRIST_HALL = A6;
+const int WRIST_SWITCH = A7;
 const int ARMGRIPTIME = 1200;
 const int WRISTTIME = 1000; //Wrist rotation at 255 speed for 1000 milliseconds is approximately 180 degres of rotation (or one-half turn)
 int wristSwitch = 0;
@@ -61,7 +63,7 @@ int runFlag = 0;
 ***********************************/
 void armGripper(int gripDirection, int gripTime = ARMGRIPTIME);
 //void armWristRotation(int wristDirection, int wristTime = WRISTTIME);
-void armWristRotation(int targetState, int wristDirection = CW, int wristSpeed = 255, int wristRotation = 0);  //targetState is VERTICAL or HORIZONTAL, wristRotations is the number of full rotations that shoudl be perfomed once the arma reaches the target state.
+void armWristRotation(int targetState, int wristDirection = CW, int wristSpeed = 255, float wristRotation = 0.25);  //targetState is VERTICAL or HORIZONTAL, wristRotations is the number of full rotations that shoudl be perfomed once the arma reaches the target state.
 
 void setup()
 {
@@ -76,8 +78,8 @@ void setup()
 
 void loop()
 {
-//  armGripper(OPEN);
-  armWristRotation(VERTICAL);
+  armGripper(OPEN);
+//  armWristRotation(VERTICAL);
 
 
 
@@ -208,33 +210,92 @@ void armGripper(int gripDirection, int gripTime = ARMGRIPTIME) {
   }
 }
 
-void armWristRotation(int targetState, int wristDirection = CW, int wristSpeed = 255, int wristRotation = 0) {
+void armWristRotation(int targetState, int wristDirection = CW, int wristSpeed = 255, float wristRotation = 0.25) {
   if(runFlag == 0) {
-    runFlag = 1;
-    if(digitalRead(A7) == LOW){
-      armWrist.run(wristSpeed);
-      while(digitalRead(A7) == LOW) {
-      
-      }
-      armWrist.stop();
-      armWrist.run(-wristSpeed); //Brake
-      delay(30);
-      armWrist.run(0);
-      armWrist.stop();
+    int count = 0;
+    float switchCount = 0;
+  
+    //Set sign of speed value based on desired direction
+    if(wristDirection == CCW) {
+      wristSpeed = wristSpeed * -1;
     }
-    else if(digitalRead(A7) == HIGH){
-      armWrist.run(wristSpeed);
-      while(digitalRead(A7) == HIGH) {
-      
+    //Initialize wrist postion to the nearest cardinal position (based on screws and switch activation)
+    if(digitalRead(WRIST_SWITCH) == LOW){ //If switch starts in OPEN state
+      armWrist.run(wristSpeed);   //Run motor until switch is activated (which means wrist is in one of the cardinal directions)
+      while(digitalRead(WRIST_SWITCH) == LOW) {
+        //Wait for switch to go HIGH (switch is PRESSED)
       }
-      while(digitalRead(A7) == LOW) {
-      
-      }
+      //Brake motor once switch is activated
       armWrist.stop();
-      armWrist.run(-wristSpeed); //Brake
+      armWrist.run(-wristSpeed); //Reverse motor direction to brake briefly
       delay(30);
-      armWrist.run(0);
+      armWrist.run(0);    //Release motor by setting speed to zero
       armWrist.stop();
+
+      //Update wristState
+      if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are activated, gripper is HORIZONTAL
+        wristState = HORIZONTAL;
+      }
+      else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+        wristState = VERTICAL;
+      }
+    }
+    else if(digitalRead(WRIST_SWITCH) == HIGH){ //If switch starts in PRESSED state
+      //Convert wristRotations to count of switch activations (number od screws passed)
+      switchCount = int(wristRotation * 4);
+      if(switchCount > 0) {
+        armWrist.run(wristSpeed);
+        while(count < switchCount){   //Wait to pass through the requied number of screws
+          while(digitalRead(WRIST_SWITCH) == HIGH) {
+            //Wait for switch to deactivate
+          }
+          while(digitalRead(WRIST_SWITCH) == LOW) {
+            //Wait for switch to re-activate
+          }
+          //Update wristState
+          if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are activated, gripper is HORIZONTAL
+            wristState = HORIZONTAL;
+          }
+          else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+            wristState = VERTICAL;
+          }
+          count++;
+        }
+  
+        //Brake motor once correct number os screws are passed through
+        armWrist.stop();
+        armWrist.run(-wristSpeed); //Brake
+        delay(30);
+        armWrist.run(0);
+        armWrist.stop();
+      }
+      if(wristState == targetState) { //If targetState has been achieved, set flag to prevent function from re-running
+        runFlag = 1;
+      }
+      else {
+        armWrist.run(wristSpeed);   //Run motor until switch is activated (which means wrist is in one of the cardinal directions)
+        while(digitalRead(WRIST_SWITCH) == HIGH) {
+          //Wait for switch to deactivate
+        }
+        while(digitalRead(WRIST_SWITCH) == LOW) {
+          //Wait for switch to re-activate
+        }
+        //Brake motor once switch is activated
+        armWrist.stop();
+        armWrist.run(-wristSpeed); //Reverse motor direction to brake briefly
+        delay(30);
+        armWrist.run(0);    //Release motor by setting speed to zero
+        armWrist.stop();
+  
+        //Update wristState
+        if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are activated, gripper is HORIZONTAL
+          wristState = HORIZONTAL;
+        }
+        else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+          wristState = VERTICAL;
+        }
+        runFlag = 1;
+      }
     }
   }
 }
