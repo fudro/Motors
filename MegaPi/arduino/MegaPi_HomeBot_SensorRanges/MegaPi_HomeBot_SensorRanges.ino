@@ -63,7 +63,7 @@ int runFlag = 0;
 ***********************************/
 void armGripper(int gripState, int gripTime = ARMGRIPTIME);
 //void wristRotation(int wristDirection, int wristTime = WRISTTIME);
-void wristRotation (int targetState, int wristDirection = CW, float wristRotation = 0.0, int wristSpeed = 255);  //targetState is VERTICAL or HORIZONTAL, wristRotations is the number of full rotations that shoudl be perfomed once the arma reaches the target state.
+void wristRotation (int targetState, float wristRotation = 0.0, int wristDirection = CW,  int wristSpeed = 255);  //targetState is VERTICAL or HORIZONTAL, wristRotations is the number of full rotations that shoudl be perfomed once the arma reaches the target state.
 
 void setup()
 {
@@ -79,7 +79,7 @@ void setup()
 void loop()
 {
 //  armGripper(OPEN);
-  wristRotation(V);
+  wristRotation(V, 0.75, CCW);
 
 
 
@@ -214,7 +214,7 @@ void armGripper(int gripState, int gripTime = ARMGRIPTIME) {
 /*
  * Rotate wrist by declaring the desired end state (REQUIRED), a rotation direction, the number of complete revolutions, and the desired speed.
  */
-void wristRotation(int targetState, int wristDirection = CW, float wristRotation = 0.0, int wristSpeed = 255) {
+void wristRotation(int targetState, float wristRotation = 0.0, int wristDirection = CW, int wristSpeed = 255) {
   if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
     int count = 0;
     float switchCount = 0;
@@ -225,6 +225,14 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
     }
     //Convert wristRotations to required count of switch activations (number of hardware screws that must be passed during rotation)
     switchCount = int(wristRotation * 4);   //There are 4 hardware screws per one revolution. A fractional value for wristRotation will produce an integer value less than 4.
+
+    //Update wristState
+    if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are "activated" (hall sensor is LOW when active), gripper is HORIZONTAL
+      wristState = H;
+    }
+    else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+      wristState = V;
+    }
     
     //Initialize wrist postion to the nearest cardinal position (determined by switch activation by one of 4 hardware screws combined with state of hall effect sensor)
     if(digitalRead(WRIST_SWITCH) == LOW){     //If switch starts in OPEN state (not activated by a hardware screw)
@@ -232,6 +240,7 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
       while(digitalRead(WRIST_SWITCH) == LOW) {
         //Wait for switch to go HIGH (switch is PRESSED)
       }
+      delay(50);  //Add delay to allow switch to fully seat over the hardware screw before stopping motor.
       //Brake motor once switch is activated
       armWrist.stop();
       armWrist.run(-wristSpeed); //Breifly reverse motor direction to brake
@@ -266,15 +275,16 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
             }
             count++;    //Update count for each new screw detected during rotation
           }
+          delay(50);  //Add delay to allow switch to fully seat over the hardware screw before stopping motor.
           //Brake motor once correct number of screws are passed through
           armWrist.stop();
           armWrist.run(-wristSpeed); //Brake
           delay(30);
           armWrist.run(0);
           armWrist.stop();
-  
-          //Update wristState once required rotation has completed
-          if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are "activated" (hall sensor is LOW when active), gripper is HORIZONTAL
+
+          //Update wristState
+          if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are activated, gripper is HORIZONTAL
             wristState = H;
           }
           else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
@@ -294,6 +304,7 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
         while(digitalRead(WRIST_SWITCH) == LOW) {
           //Wait for switch to re-activate
         }
+        delay(50);  //Add delay to allow switch to fully seat over the hardware screw before stopping motor.
         //Brake motor once switch is activated
         armWrist.stop();
         armWrist.run(-wristSpeed); //Reverse motor direction to brake briefly
