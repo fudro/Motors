@@ -53,6 +53,10 @@ const int WRIST_HALL = A6;
 const int WRIST_SWITCH = A7;
 const int ARMGRIPTIME = 1200; //Time for arm gripper to go from fully open to fully closed and vice versa.
 const int WRISTTIME = 1000; //Wrist rotation at 255 speed for 1000 milliseconds is approximately 180 degres of rotation (or one-half turn)
+const int ELBOW_LOWER_MAX = 80;
+const int ELBOW_UPPER_MAX = 760;
+const int SHOULDER_LOWER_MAX = 330;
+const int SHOULDER_UPPER_MAX = 600;
 int wristSwitch = 0;
 int wristState = H; //horizontal direcction as default
 int runFlag = 0;
@@ -62,8 +66,8 @@ int runFlag = 0;
 ***********************************/
 void armGripper(int gripState, int gripTime = ARMGRIPTIME);
 void wristRotation (int targetState, int wristDirection = CW, float wristRotation = 0.0, int wristSpeed = 255);  //targetState is VERTICAL or HORIZONTAL, wristRotation is the number of full revolutions to be perfomed.
-void elbowMove(int elbowPosition, int elbowSpeed = 255);
-void shoulderMove(int shoulderPosition = 100, int shoulderSpeed = 255);
+void elbowMove(int elbowPosition = 500, int elbowSpeed = 127);
+void shoulderMove(int shoulderPosition = 515, int shoulderSpeed = 127);
 
 void setup()
 {
@@ -83,8 +87,15 @@ void loop()
 {
 //  armGripper(OPEN);
 //  wristRotation(V);
-//  elbowMove(100, 255);
-  shoulderMove(100, 255);
+//  elbowMove();
+  shoulderMove();
+
+  Serial.print("Elbow Position: ");
+  Serial.println(analogRead(A8));
+
+  Serial.print("Shoulder Position: ");
+  Serial.println(analogRead(A9));
+  delay(1000);
 
 
 
@@ -321,67 +332,89 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
   }
 }
 
-void elbowMove(int elbowPosition = 100, int elbowSpeed = 255) { //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
-  int lastPosition = analogRead(A8);
-  if(elbowPosition < lastPosition) {  //If the desired postion is lower than the current position.
-    Serial.println("Elbow Down");
-    while(elbowPosition < lastPosition) {
-      elbow.run(-elbowSpeed);
-      delay(100);
-      lastPosition = analogRead(A8);
+/*
+ * ELBOW RANGES
+ * UpperMax Gripper fully "up" against arm bar): 760 sensor reads 770 at "up"
+ * MidPoint (Gripper roughly "level" with arm bar): 500 sensor reads ~490 at "level"
+ * LowerMax Gripper fully "down" compared to arm bar): 80 sensor reads 65 at 90 degrees "down" compared to arm bar
+ */
+void elbowMove(int elbowPosition = 500, int elbowSpeed = 127) { //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
+  if(elbowPosition >= ELBOW_LOWER_MAX && elbowPosition <= ELBOW_UPPER_MAX) {   //Check ranges
+    if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
+      int lastPosition = analogRead(A8);
+      if(elbowPosition < lastPosition) {  //If the desired postion is lower than the current position.
+        Serial.println("Elbow Down");
+        while(elbowPosition < lastPosition) {
+          elbow.run(-elbowSpeed);
+          delay(100);
+          lastPosition = analogRead(A8);
+        }
+        //Brake motor once switch is activated
+        elbow.stop();
+        elbow.run(elbowSpeed); //Reverse motor direction to brake briefly
+        delay(30);
+        elbow.run(0);    //Release motor by setting speed to zero
+        elbow.stop();
+      }
+      else if(elbowPosition > lastPosition) {  //If the desired postion is lower than the current position.
+        Serial.println("Elbow Up");
+        while(elbowPosition > lastPosition) {
+          elbow.run(elbowSpeed);
+          delay(100);
+          lastPosition = analogRead(A8);
+        }
+        //Brake motor once switch is activated
+        elbow.stop();
+        elbow.run(-elbowSpeed); //Reverse motor direction to brake briefly
+        delay(30);
+        elbow.run(0);    //Release motor by setting speed to zero
+        elbow.stop();
+      }
+      runFlag = 1;
     }
-    //Brake motor once switch is activated
-    elbow.stop();
-    elbow.run(elbowSpeed); //Reverse motor direction to brake briefly
-    delay(30);
-    elbow.run(0);    //Release motor by setting speed to zero
-    elbow.stop();
-  }
-  else if(elbowPosition > lastPosition) {  //If the desired postion is lower than the current position.
-    Serial.println("Elbow Up");
-    while(elbowPosition > lastPosition) {
-      elbow.run(elbowSpeed);
-      delay(100);
-      lastPosition = analogRead(A8);
-    }
-    //Brake motor once switch is activated
-    elbow.stop();
-    elbow.run(-elbowSpeed); //Reverse motor direction to brake briefly
-    delay(30);
-    elbow.run(0);    //Release motor by setting speed to zero
-    elbow.stop();
   }
 }
 
-void shoulderMove(int shoulderPosition = 100, int shoulderSpeed = 255) {  //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
-  int lastPosition = analogRead(A9);
-  if(shoulderPosition < lastPosition) {  //If the desired postion is lower than the current position.
-    Serial.println("Shoulder Down");
-    while(shoulderPosition < lastPosition) {
-      shoulder.run(-shoulderSpeed);
-      delay(100);
-      lastPosition = analogRead(A9);
+/*
+ * SHOULDER RANGES
+ * LowerMax (Lowest arm bar "down" position over rear of robot): 600 sensor reads 515 at lowest arm bar position over rear of robot
+ * MidPoint (Gripper roughly "level" with arm bar): 515 sensor reads ~520 at "level"
+ * UpperMax (Highest arm bar position): 330 sensor reads ~330 at "highest" position
+ */
+void shoulderMove(int shoulderPosition = 515, int shoulderSpeed = 127) {  //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
+  if(shoulderPosition >= SHOULDER_LOWER_MAX && shoulderPosition <= SHOULDER_UPPER_MAX) {   //Check ranges
+    if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
+      int lastPosition = analogRead(A9);
+      if(shoulderPosition < lastPosition) {  //If the desired postion is lower than the current position.
+        Serial.println("Shoulder Down");
+        while(shoulderPosition < lastPosition) {
+          shoulder.run(-shoulderSpeed);
+          delay(100);
+          lastPosition = analogRead(A9);
+        }
+        //Brake motor once switch is activated
+        shoulder.stop();
+        shoulder.run(shoulderSpeed); //Reverse motor direction to brake briefly
+        delay(30);
+        shoulder.run(0);    //Release motor by setting speed to zero
+        shoulder.stop();
+      }
+      else if(shoulderPosition > lastPosition) {  //If the desired postion is lower than the current position.
+        Serial.println("Shoulder Up");
+        while(shoulderPosition > lastPosition) {
+          shoulder.run(shoulderSpeed);
+          delay(100);
+          lastPosition = analogRead(A9);
+        }
+        //Brake motor once switch is activated
+        shoulder.stop();
+        shoulder.run(-shoulderSpeed); //Reverse motor direction to brake briefly
+        delay(30);
+        shoulder.run(0);    //Release motor by setting speed to zero
+        shoulder.stop();
+      }
+      runFlag = 1;
     }
-    //Brake motor once switch is activated
-    shoulder.stop();
-    shoulder.run(shoulderSpeed); //Reverse motor direction to brake briefly
-    delay(30);
-    shoulder.run(0);    //Release motor by setting speed to zero
-    shoulder.stop();
-  }
-  else if(shoulderPosition > lastPosition) {  //If the desired postion is lower than the current position.
-    Serial.println("Shoulder Up");
-    while(shoulderPosition > lastPosition) {
-      shoulder.run(shoulderSpeed);
-      delay(100);
-      lastPosition = analogRead(A9);
-    }
-    //Brake motor once switch is activated
-    shoulder.stop();
-    shoulder.run(-shoulderSpeed); //Reverse motor direction to brake briefly
-    delay(30);
-    shoulder.run(0);    //Release motor by setting speed to zero
-    shoulder.stop();
   }
 }
 
