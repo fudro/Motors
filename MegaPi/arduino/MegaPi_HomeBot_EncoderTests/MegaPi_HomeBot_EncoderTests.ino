@@ -42,7 +42,7 @@ MeMegaPiDCMotor turnTable(PORT3B); //Turntable
 MeMegaPiDCMotor elbow(PORT4A); //Elbow
 MeMegaPiDCMotor shoulder(PORT4B); //Shoulder
 
-uint8_t motorSpeed = 100;
+int motorSpeed = 65;
 const int OPEN = 0;
 const int CLOSE = 1;
 const int H = 0;    //HORIZONTAL
@@ -64,10 +64,12 @@ const int ELBOW_MIN = 80; //Limit values for sensor
 const int ELBOW_MAX = 700;
 const int SHOULDER_MIN = 375;
 const int SHOULDER_MAX = 600;
-const int TURNTABLE_ANALOG_MAX = 875;
-const int TURNTABLE_ANALOG_MIN = 650;
-const int DRIVE_LEFT_ANALOG_MAX = 700;
-const int DRIVE_RIGHT_ANALOG_MAX = 400;
+const int TURNTABLE_ANALOG_MAX = 800;
+const int TURNTABLE_ANALOG_MIN = 600;
+const int DRIVE_LEFT_ANALOG_MAX = 800;
+const int DRIVE_LEFT_ANALOG_MIN = 300;
+const int DRIVE_RIGHT_ANALOG_MAX = 800;
+const int DRIVE_RIGHT_ANALOG_MIN = 300;
 int wristSwitch = 0;  //store value of hardware switch
 int wristState = H; //current state of wrist, horizontal direction as default
 int turnTableAnalog = 0;  //analog value of turntable encoder
@@ -81,6 +83,9 @@ int driveLeftEncoder = 1;
 int driveRightAnalog = 0;
 int driveRightEncoder = 1;
 int runFlag = 0;
+//Encoder Tests
+int limit = 8;
+int count = 0;
 
 /***********************************
  * FUNCTION PROTOTYPES
@@ -92,6 +97,8 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127); //approx
 void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65);    //turnDegrees is the degrees of angular rotation from the current position
 void tailGripper(int gripState, int gripTime = TAILGRIPTIME); //gripState is OPEN or CLOSE
 void driveMove(int driveDistance = 20, int driveDirection = CW, int driveSpeed = 127);
+void turnTableTest(int turnDirection = CW);
+void turnTableTick(int turnDirection = CW);
 
 void setup()
 {
@@ -101,7 +108,7 @@ void setup()
   pinMode(DRIVE_LEFT_ENCODER, INPUT_PULLUP);
   pinMode(DRIVE_RIGHT_ENCODER, INPUT_PULLUP);
   pinMode(ELBOW_POT, INPUT); //elbow potentiomter
-  pinMode(SHOULDER_POT, INPUT_PULLUP); //shoulder potentiometer
+  pinMode(SHOULDER_POT, INPUT); //shoulder potentiometer
   pinMode(TURNTABLE_HALL, INPUT_PULLUP); //turntable hall effect
   pinMode(TURNTABLE_ENCODER, INPUT_PULLUP); //turntable encoder
   Serial.begin(115200);
@@ -113,29 +120,14 @@ void setup()
 
 void loop()
 {
-//  armGripper(OPEN);
-//  wristRotation(V);
-//  elbowMove();b
-//  shoulderMove();
-  turnTableMove(45, CW);
-//  tailGripper(CLOSE);
-//  driveMove();
+//  driveRightTick();
+//  driveLeftTick();
+//  driveRightTest();
+//  turnTableTest(CW);
+//  turnTableTick(CW);
+//  shoulderMove(400);
+  elbowMove(80);
 
-
-
-//  Serial.print("Shoulder Position: ");
-//  Serial.println(analogRead(SHOULDER_POT));
-//
-//  motor3.run(motorSpeed);
-//  motor4.run(motorSpeed);
-//  turnTableAnalog = analogRead(TURNTABLE_ENCODER);
-//  driveRightAnalog = analogRead(DRIVE_RIGHT_ENCODER);
-//  Serial.print("Turntable Value: ");
-//  Serial.println(analogRead(turnTableAnalog));
-//  Serial.print("\t");
-//  Serial.print("Drive Right Value: ");
-//  Serial.println(analogRead(driveRightAnalog));
-  delay(10);
 
 
 
@@ -197,14 +189,14 @@ void loop()
 //
 //  Serial.println("Turntable...");
 //  Serial.println("Turntable Counter-Clockwise");
-//  motor6.run(motorSpeed);
+//  turnTable.run(motorSpeed);
 //  delay(500);
-//  motor6.stop();
+//  turnTable.stop();
 //  delay(500);
 //  Serial.println("Turntable Clockwise");
-//  motor6.run(-motorSpeed);
+//  turnTable.run(-motorSpeed);
 //  delay(500);
-//  motor6.stop();
+//  turnTable.stop();
 //  Serial.print("\n");
 //  delay(1000);
 //
@@ -237,6 +229,160 @@ void loop()
 }
 
 
+void driveRightTick() {
+  int sensorReading;
+  if (runFlag == 0) {
+    motor4.run(motorSpeed);   //Positive motorSpeed sends robot in forward direction
+    while (count < limit) {
+      driveRightAnalog = analogRead(DRIVE_RIGHT_ENCODER);
+      if(driveRightAnalog > DRIVE_RIGHT_ANALOG_MAX && driveRightEncoder == 0) {
+        driveRightEncoder = 1;
+        count++;
+      }
+      else if(driveRightAnalog < DRIVE_RIGHT_ANALOG_MIN && driveRightEncoder == 1) {
+        driveRightEncoder = 0;
+      }
+      Serial.print("Count: ");
+      Serial.print(count);
+      Serial.print("\t");
+      Serial.println(driveRightAnalog);
+      delay (10);
+    }
+    //Brake motor
+    motor4.stop();
+    motor4.run(-motorSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    motor4.run(0);    //Release motor by setting speed to zero
+    motor4.stop();
+    runFlag = 1;
+  }
+}
+
+void driveLeftTick() {
+  int sensorReading;
+  if (runFlag == 0) {
+    motor3.run(motorSpeed);   //Positive motorSpeed sends robot in forward direction
+    while (count < limit) {
+      driveLeftAnalog = analogRead(DRIVE_LEFT_ENCODER);
+      if(driveLeftAnalog > DRIVE_LEFT_ANALOG_MAX && driveLeftEncoder == 0) {
+        driveLeftEncoder = 1;
+        count++;
+      }
+      else if(driveLeftAnalog < DRIVE_LEFT_ANALOG_MIN && driveLeftEncoder == 1) {
+        driveLeftEncoder = 0;
+      }
+      Serial.print("Count: ");
+      Serial.print(count);
+      Serial.print("\t");
+      Serial.println(driveLeftAnalog);
+      delay (10);
+    }
+    //Brake motor
+    motor3.stop();
+    motor3.run(-motorSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    motor3.run(0);    //Release motor by setting speed to zero
+    motor3.stop();
+    runFlag = 1;
+  }
+}
+
+
+void driveRightTest(){
+  int sensorReading;
+  if (runFlag == 0) {
+    motor4.run(motorSpeed);
+    while(count < limit) {
+      count++;
+      sensorReading = analogRead(DRIVE_RIGHT_ENCODER);
+      Serial.println(sensorReading);
+      delay(10);
+    }
+    //Brake motor
+    motor4.stop();
+    motor4.run(-motorSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    motor4.run(0);    //Release motor by setting speed to zero
+    motor4.stop();
+    runFlag = 1;
+  }
+}
+
+void driveLeftTest(){
+  int sensorReading;
+  if (runFlag == 0) {
+    motor3.run(motorSpeed);
+    while(count < limit) {
+      count++;
+      sensorReading = analogRead(DRIVE_LEFT_ENCODER);
+      Serial.println(sensorReading);
+      delay(10);
+    }
+    //Brake motor
+    motor3.stop();
+    motor3.run(-motorSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    motor3.run(0);    //Release motor by setting speed to zero
+    motor3.stop();
+    runFlag = 1;
+  }
+}
+
+void turnTableTest(int turnDirection = CW){
+  if(turnDirection == CW) {
+    motorSpeed = motorSpeed * -1;
+  }
+  if (runFlag == 0) {
+    turnTable.run(motorSpeed);
+    while(count < limit) {
+      count++;
+      turnTableAnalog = analogRead(TURNTABLE_ENCODER);
+      Serial.print("Count: ");
+      Serial.print(count);
+      Serial.print("\t");
+      Serial.println(turnTableAnalog);
+      delay(10);
+    }
+    //Brake motor
+    turnTable.stop();
+    turnTable.run(-motorSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    turnTable.run(0);    //Release motor by setting speed to zero
+    turnTable.stop();
+    runFlag = 1;
+  }
+}
+
+void turnTableTick(int turnDirection = CW) {
+  if (runFlag == 0) {
+    if(turnDirection == CW) {
+      motorSpeed = motorSpeed * -1;
+    }
+    turnTable.run(motorSpeed);   //Positive motorSpeed sends robot in forward direction
+    while (count < limit) {
+      turnTableAnalog = analogRead(TURNTABLE_ENCODER);
+      if(turnTableAnalog > TURNTABLE_ANALOG_MAX && turnTableEncoder == 0) {
+        turnTableEncoder = 1;
+        count++;
+      }
+      else if(turnTableAnalog < TURNTABLE_ANALOG_MIN && turnTableEncoder == 1) {
+        turnTableEncoder = 0;
+      }
+      Serial.print("Count: ");
+      Serial.print(count);
+      Serial.print("\t");
+      Serial.println(turnTableAnalog);
+      delay (10);
+    }
+    //Brake motor
+    turnTable.stop();
+    turnTable.run(-motorSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    turnTable.run(0);    //Release motor by setting speed to zero
+    turnTable.stop();
+    runFlag = 1;
+  }
+}
 
 void driveMove(int driveDistance = 20, int driveDirection = CW, int driveSpeed = 127) {
   if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
@@ -576,9 +722,11 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
     if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
       int lastPosition = analogRead(ELBOW_POT);
       if(elbowPosition < lastPosition) {  //If the desired postion is lower than the current position.
-        Serial.println("Elbow Down");
+        Serial.print("Elbow Down");
+        Serial.print("\t");
         Serial.print("Target Position: ");
-        Serial.println(elbowPosition);
+        Serial.print(elbowPosition);
+        Serial.print("\n");
         while(elbowPosition < lastPosition) {
           elbow.run(-elbowSpeed);
           delay(100);
@@ -593,7 +741,11 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
         elbow.stop();
       }
       else if(elbowPosition > lastPosition) {  //If the desired postion is lower than the current position.
-        Serial.println("Elbow Up");
+        Serial.print("Elbow Up");
+        Serial.print("\t");
+        Serial.print("Target Position: ");
+        Serial.print(elbowPosition);
+        Serial.print("\n");
         while(elbowPosition > lastPosition) {
           elbow.run(elbowSpeed);
           delay(100);
@@ -608,8 +760,6 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
         elbow.stop();
       }
       runFlag = 1;
-//  Serial.print("Elbow Position: ");
-//  Serial.println(analogRead(ELBOW_POT));
     }
   }
 }
@@ -625,9 +775,11 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Defa
     if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
       int lastPosition = analogRead(SHOULDER_POT);
       if(shoulderPosition < lastPosition) {  //If the desired postion is lower than the current position.
-        Serial.println("Shoulder Up");
+        Serial.print("Shoulder Up");
+        Serial.print("\t");
         Serial.print("Target Position: ");
-        Serial.println(shoulderPosition);
+        Serial.print(shoulderPosition);
+        Serial.print("\n");
         while(shoulderPosition < lastPosition) {
           shoulder.run(-shoulderSpeed);
           delay(100);
@@ -642,9 +794,11 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Defa
         shoulder.stop();
       }
       else if(shoulderPosition > lastPosition) {  //If the desired postion is lower than the current position.
-        Serial.println("Shoulder Down");
+        Serial.print("Shoulder Down");
+        Serial.print("\t");
         Serial.print("Target Position: ");
-        Serial.println(shoulderPosition);
+        Serial.print(shoulderPosition);
+        Serial.print("\n");
         while(shoulderPosition > lastPosition) {
           shoulder.run(shoulderSpeed);
           delay(100);
