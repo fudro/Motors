@@ -35,8 +35,8 @@
 
 MeMegaPiDCMotor armGrip(PORT1A); //Arm Gripper
 MeMegaPiDCMotor armWrist(PORT1B); //Wrist
-MeMegaPiDCMotor motor3(PORT2A); //Drive Left
-MeMegaPiDCMotor motor4(PORT2B); //Drive Right
+MeMegaPiDCMotor driveRight(PORT2A); //Drive Right, based on the sonar unit being the "front" of the robot
+MeMegaPiDCMotor driveLeft(PORT2B); //Drive Left
 MeMegaPiDCMotor tailGrip(PORT3A); //Tail Gripper
 MeMegaPiDCMotor turnTable(PORT3B); //Turntable
 MeMegaPiDCMotor elbow(PORT4A); //Elbow
@@ -49,6 +49,8 @@ const int H = 0;    //HORIZONTAL
 const int V = 1;    //VERTICAL
 const int CW = 0;
 const int CCW = 1;
+const int FW = 1; //Forward
+const int BW = 0; //Backward
 const int WRIST_HALL = 28;  //sensor pin assignment
 const int WRIST_SWITCH = 26;
 const int DRIVE_RIGHT_ENCODER = A11;
@@ -59,7 +61,7 @@ const int TURNTABLE_HALL = 30;
 const int TURNTABLE_ENCODER = A7;
 const int ARMGRIPTIME = 1200; //Time for arm gripper at max speed 255 to go from fully open to fully closed and vice versa.
 const int WRISTTIME = 1000; //Wrist rotation at max speed 255 for 1000 milliseconds is approximately 180 degres of rotation (or one-half turn)
-const int TAILGRIPTIME = 400;  //Time for tail gripper at max speed 255 to go from fully open to fully closed and vice versa.
+const int TAILGRIPTIME = 400;  //Time for tail gripper at HALF SPEED (128) to go from fully open to fully closed and vice versa.
 const int ELBOW_MIN = 80; //Limit values for sensor
 const int ELBOW_MAX = 700;
 const int SHOULDER_MIN = 375;
@@ -67,18 +69,20 @@ const int SHOULDER_MAX = 600;
 const int TURNTABLE_ANALOG_MAX = 875;
 const int TURNTABLE_ANALOG_MIN = 650;
 const int DRIVE_LEFT_ANALOG_MAX = 700;
-const int DRIVE_RIGHT_ANALOG_MAX = 400;
+const int DRIVE_LEFT_ANALOG_MIN = 400;
+const int DRIVE_RIGHT_ANALOG_MAX = 700;
+const int DRIVE_RIGHT_ANALOG_MIN = 400;
 int wristSwitch = 0;  //store value of hardware switch
 int wristState = H; //current state of wrist, horizontal direction as default
 int turnTableAnalog = 0;  //analog value of turntable encoder
 int turnTableEncoder = 1; //state of turntable encoder. Set initial stae to 1 since this pin is pulled high
 int turnTableCount = 1;  //store value of turntable position based on encoder ticks. Default to 1 for easy math (15 ticks ~ 90 degrees)
 int turnTableHall = 0; //state of turntable hall effect sensor
-int driveLeftCount = 0;
+int driveLeftCount = 0; //store encoder tick value to track movement
 int driveRightCount = 0;
-int driveLeftAnalog = 0;
-int driveLeftEncoder = 1;
+int driveLeftAnalog = 0;  //last analog value from sensor, used to set current state of encoder
 int driveRightAnalog = 0;
+int driveLeftEncoder = 1; //last state of encoder high(1) or low(0), for comparison
 int driveRightEncoder = 1;
 int runFlag = 0;
 
@@ -91,7 +95,7 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65);  //approximate cen
 void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127); //approximate center position and preferred default speed.
 void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65);    //turnDegrees is the degrees of angular rotation from the current position
 void tailGripper(int gripState, int gripTime = TAILGRIPTIME); //gripState is OPEN or CLOSE
-void driveMove(int driveDistance = 20, int driveDirection = CW, int driveSpeed = 127);
+void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed = 127);
 
 void setup()
 {
@@ -117,134 +121,22 @@ void loop()
 //  wristRotation(V);
 //  elbowMove();b
 //  shoulderMove();
-  turnTableMove(45, CW);
-//  tailGripper(CLOSE);
-//  driveMove();
+//  turnTableMove(45, CW);
+//  tailGripper(CLOSE);     //GOOD
+//  driveMove(10, FW, 65);  //GOOD
 
-
-
-//  Serial.print("Shoulder Position: ");
-//  Serial.println(analogRead(SHOULDER_POT));
-//
-//  motor3.run(motorSpeed);
-//  motor4.run(motorSpeed);
-//  turnTableAnalog = analogRead(TURNTABLE_ENCODER);
-//  driveRightAnalog = analogRead(DRIVE_RIGHT_ENCODER);
-//  Serial.print("Turntable Value: ");
-//  Serial.println(analogRead(turnTableAnalog));
-//  Serial.print("\t");
-//  Serial.print("Drive Right Value: ");
-//  Serial.println(analogRead(driveRightAnalog));
   delay(10);
-
-
-
-/***************************
- * OLD CODE
- * Use as basis for new updated functions.
- **************************/
-//  Serial.println("Wrist...");
-//  Serial.println("Wrist Clockwise");
-//  armWrist.run(motorSpeed);
-//  delay(500);
-//  armWrist.stop();
-//  delay(500);
-//  Serial.println("Wrist Counter-Clockwise");
-//  armWrist.run(-motorSpeed);
-//  delay(500);
-//  armWrist.stop();
-//  Serial.print("\n");
-//  delay(1000);
-//
-//  Serial.println("Drive Left...");
-//  Serial.println("Reverse");
-//  motor3.run(motorSpeed);
-//  delay(500);
-//  motor3.stop();
-//  delay(500);
-//  Serial.println("Forward");
-//  motor3.run(-motorSpeed);
-//  delay(500);
-//  motor3.stop();
-//  Serial.print("\n");
-//  delay(1000);
-//
-//  Serial.println("Drive Right...");
-//  Serial.println("Reverse");
-//  motor4.run(motorSpeed);
-//  delay(500);
-//  motor4.stop();
-//  delay(500);
-//  Serial.println("Forward");
-//  motor4.run(-motorSpeed);
-//  delay(500);
-//  motor4.stop();
-//  Serial.print("\n");
-//  delay(1000);
-//
-//  Serial.println("Tail Gripper...");
-//  Serial.println("Tail Close");
-//  tailGrip.run(motorSpeed);
-//  delay(500);
-//  tailGrip.stop();
-//  delay(500);
-//  Serial.println("Tail Open");
-//  tailGrip.run(-motorSpeed);
-//  delay(500);
-//  tailGrip.stop();
-//  Serial.print("\n");
-//  delay(1000);
-//
-//  Serial.println("Turntable...");
-//  Serial.println("Turntable Counter-Clockwise");
-//  motor6.run(motorSpeed);
-//  delay(500);
-//  motor6.stop();
-//  delay(500);
-//  Serial.println("Turntable Clockwise");
-//  motor6.run(-motorSpeed);
-//  delay(500);
-//  motor6.stop();
-//  Serial.print("\n");
-//  delay(1000);
-//
-//  Serial.println("Elbow...");
-//  Serial.println("Elbow Up");
-//  elbow.run(motorSpeed);
-//  delay(500);
-//  elbow.stop();
-//  delay(500);
-//  Serial.println("Elbow Down");
-//  elbow.run(-motorSpeed);
-//  delay(500);
-//  elbow.stop();
-//  Serial.print("\n");
-//  delay(1000);
-//
-//  Serial.println("Shoulder...");
-//  Serial.println("Shoulder Down");
-//  shoulder.run(motorSpeed);
-//  delay(500);
-//  shoulder.stop();
-//  delay(500);
-//  Serial.println("Shoulder Up");
-//  shoulder.run(-motorSpeed);
-//  delay(500);
-//  shoulder.stop();
-//  Serial.print("\n");
-//  Serial.print("\n");
-//  delay(1000);
 }
 
 
 
-void driveMove(int driveDistance = 20, int driveDirection = CW, int driveSpeed = 127) {
+void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed = 127) {
   if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
-    float tickTarget = 1.0;
+    float tickTarget = 1.0; //number of encoder ticks required to perform the movement
 
-    //convert turnDegrees to encoder ticks (90 degrees is approximately 15 ticks)
-    if(driveDistance > 0) {
-      tickTarget = driveDistance;  //apply some function to convert driveDistance to ticks
+    //convert driveDistance to encoder ticks (90 degrees is approximately 15 ticks)
+    if(driveDistance > 0) { //check for valid input for travel 
+      tickTarget = driveDistance;  //TODO: apply some function to convert driveDistance to ticks
       Serial.print("Motor Distance: ");
       Serial.println(driveDistance);
       Serial.print("TickTarget: ");
@@ -252,88 +144,77 @@ void driveMove(int driveDistance = 20, int driveDirection = CW, int driveSpeed =
     }
     
     //Set sign of motor speed based on desired rotation direction
-    if(driveDirection == CW) {
+    if(driveDirection == BW) {  //Forward
       driveSpeed = driveSpeed * -1;
-      Serial.println("Forward");
+      Serial.println("Backward");
     }
     else {
-      Serial.println("Reverse");
+      Serial.println("Forward");
     }
 
-    motor3.run(driveSpeed);
-    motor4.run(driveSpeed);
-    while (driveLeftCount < tickTarget && driveRightCount < tickTarget) {
+    driveRight.run(driveSpeed); //right wheel based on sonar unit being the "front" of the robot
+    driveLeft.run(driveSpeed); //left wheel
+    while (driveLeftCount < tickTarget && driveRightCount < tickTarget) {   //Wait for both encoders to reach the target value.
       driveLeftAnalog = analogRead(DRIVE_LEFT_ENCODER);
       driveRightAnalog = analogRead(DRIVE_RIGHT_ENCODER);
-//      if(driveLeftAnalog > DRIVE_LEFT_ANALOG_MAX && driveLeftEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set the sensor to HIGH and increment the tick count.
-//        driveLeftEncoder = 1;
-//        driveLeftCount++;
-//      }
-//      else if(driveLeftAnalog < DRIVE_LEFT_ANALOG_MIN && driveLeftEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor to LOW and wait for next trigger.
-//        driveLeftEncoder = 0;
-//      }
+      if(driveLeftAnalog > DRIVE_LEFT_ANALOG_MAX && driveLeftEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set the sensor to HIGH and increment the tick count.
+        driveLeftEncoder = 1;
+        driveLeftCount++;   //Increment encoder tick count each time th sensor reads HIGH
+      }
+      else if(driveLeftAnalog < DRIVE_LEFT_ANALOG_MIN && driveLeftEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor to LOW and wait for next trigger.
+        driveLeftEncoder = 0;
+      }
+      Serial.print("L: ");
+      Serial.print("A ");
       Serial.print(driveLeftAnalog);
+      if(driveLeftAnalog < 100) { //formatting trick to add a tab if the value has only 2 digits (this causes display readability issues)
+        Serial.print("\t");
+      }
       Serial.print("\t");
+      Serial.print("E ");
       Serial.print(driveLeftEncoder);
       Serial.print("\t");
-      Serial.println(driveLeftCount);
-
-//      if(driveRightAnalog > DRIVE_RIGHT_ANALOG_MAX && driveRightEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set the sensor to HIGH and increment the tick count.
-//        driveRightEncoder = 1;
-//        driveRightCount++;
-//      }
-//      else if(driveRightAnalog < DRIVE_RIGHT_ANALOG_MIN && driveRightEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor to LOW and wait for next trigger.
-//        driveRightEncoder = 0;
-//      }
-      Serial.print(driveRightAnalog);
+      Serial.print("C ");
+      Serial.print(driveLeftCount);
       Serial.print("\t");
+      Serial.print("\t");
+
+      if(driveRightAnalog > DRIVE_RIGHT_ANALOG_MAX && driveRightEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set the sensor to HIGH and increment the tick count.
+        driveRightEncoder = 1;
+        driveRightCount++;
+      }
+      else if(driveRightAnalog < DRIVE_RIGHT_ANALOG_MIN && driveRightEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor to LOW and wait for next trigger.
+        driveRightEncoder = 0;
+      }
+      Serial.print("R: ");
+      Serial.print("A ");
+      Serial.print(driveRightAnalog);
+      if(driveRightAnalog < 100) {
+        Serial.print("\t");
+      }
+      Serial.print("\t");
+      Serial.print("E ");
       Serial.print(driveRightEncoder);
       Serial.print("\t");
+      Serial.print("C ");
       Serial.println(driveRightCount);
       delay (10);
     }
     
-    //Brake motor once switch is activated
-    motor3.stop();
-    motor3.run(-driveSpeed); //Reverse motor direction to brake briefly
+    //Brake motors once tick target is reached
+    driveRight.stop();
+    driveRight.run(-driveSpeed); //Reverse motor direction to brake briefly
     delay(30);
-    motor3.run(0);    //Release motor by setting speed to zero
-    motor3.stop();
+    driveRight.run(0);    //Release motor by setting speed to zero
+    driveRight.stop();
 
-    motor4.stop();
-    motor4.run(-driveSpeed); //Reverse motor direction to brake briefly
+    driveLeft.stop();
+    driveLeft.run(-driveSpeed); //Reverse motor direction to brake briefly
     delay(30);
-    motor4.run(0);    //Release motor by setting speed to zero
-    motor4.stop();
+    driveLeft.run(0);    //Release motor by setting speed to zero
+    driveLeft.stop();
     runFlag = 1;
   }
-
-  
-  Serial.println("Drive Left...");
-  Serial.println("Reverse");
-  motor3.run(driveSpeed);
-  delay(500);
-  motor3.stop();
-  delay(500);
-  Serial.println("Forward");
-  motor3.run(-driveSpeed);
-  delay(500);
-  motor3.stop();
-  Serial.print("\n");
-  delay(1000);
-
-  Serial.println("Drive Right...");
-  Serial.println("Reverse");
-  motor4.run(driveSpeed);
-  delay(500);
-  motor4.stop();
-  delay(500);
-  Serial.println("Forward");
-  motor4.run(-driveSpeed);
-  delay(500);
-  motor4.stop();
-  Serial.print("\n");
-  delay(1000);
 }
 
 void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
@@ -341,7 +222,7 @@ void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
     runFlag = 1;
     int gripSpeed = 128;   // value: between -255 and 255. It is rarely necessary to change the gripper speed, so it is only a local variable
     Serial.println("Tail Gripper...");
-    if (gripState == CLOSE) {
+    if (gripState == OPEN) {
       Serial.println("Tail Open:");
       Serial.print("Speed: ");
       Serial.println(gripSpeed);
@@ -351,14 +232,14 @@ void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
       tailGrip.run(gripSpeed); 
       delay(gripTime);
       
-      //Brake motor once switch is activated
+      //Brake motor
       tailGrip.stop();
       tailGrip.run(-gripSpeed); //Reverse motor direction to brake briefly
       delay(10);
       tailGrip.run(0);    //Release motor by setting speed to zero
       tailGrip.stop();
     }
-    else if (gripState == OPEN) {
+    else if (gripState == CLOSE) {
       Serial.println("Tail Close:");
       Serial.print("Speed: ");
       Serial.println(-gripSpeed);
@@ -368,7 +249,7 @@ void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
       tailGrip.run(-gripSpeed); 
       delay(gripTime);
       
-      //Brake motor once switch is activated
+      //Brake motor
       tailGrip.stop();
       tailGrip.run(gripSpeed); //Reverse motor direction to brake briefly
       delay(10);
