@@ -52,9 +52,11 @@ const int CCW = 1;
 const int FW = 1; //Forward
 const int BW = 0; //Backward
 //Pin Assignments
-const int WRIST_HALL = 30;  //TODO: Fix pin assignments for wrist
-const int WRIST_SWITCH = 28;
 //TODO: Add Sonar Pins
+//TODO: Add Lidar Pins
+//TODO: Add IMU Pins
+const int WRIST_HALL = 30;
+const int WRIST_SWITCH = 28;
 const int DRIVE_RIGHT_ENCODER = A11;
 const int DRIVE_LEFT_ENCODER = A10;
 const int ELBOW_POT = A9;
@@ -94,12 +96,12 @@ int driveLeftAnalog = 0;  //last analog value from drive encoder, raw analog val
 int driveRightAnalog = 0;
 int turnTableAnalog = 0;  //last analog value of turntable encoder
 
-int runFlag = 0;    //TODO: Remove runFlag occurrences
+//the runArray[] determines which motor functions are active (0 = inactive, 1 = active). Event if code is called by the main loop, the flag array will prevent code execution if motor is not set to "active" (1)
 int runArray[] = {0,  //runArray[0]: armGripper
-                  0,  //runArray[1]: wrist
+                  1,  //runArray[1]: wrist
                   0,  //runArray[2]: elbow
                   0,  //runArray[3]: shoulder
-                  1,  //runArray[4]: turntable
+                  0,  //runArray[4]: turntable
                   0,  //runArray[5]: tailGripper
                   0,  //runArray[6]: drive
                   0   //runArray[7]: NOT USED
@@ -109,7 +111,7 @@ int runArray[] = {0,  //runArray[0]: armGripper
  * FUNCTION PROTOTYPES
 ***********************************/
 void armGripper(int gripState, int gripTime = ARMGRIPTIME); //gripState is OPEN or CLOSE
-void wristRotation (int targetState, int wristDirection = CW, float wristRotation = 0.0, int wristSpeed = 255);  //targetState is (V)ertical or (H)orizontal, wristRotation is the number of full revolutions to be perfomed.
+void wristRotate (int targetState, int wristDirection = CW, float wristRevolution = 0.0, int wristSpeed = 255);  //targetState is (V)ertical or (H)orizontal, wristRevolution is the number of full revolutions to be perfomed.
 void elbowMove(int elbowPosition = 500, int elbowSpeed = 65);  //approximate center position and preferred default speed.
 void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127); //approximate center position and preferred default speed.
 void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65);    //turnDegrees is the degrees of angular rotation from the current position
@@ -140,33 +142,20 @@ void loop()
 //TODO: Add IMU code
 //TODO: Add Sonar code
 //TODO: Add Lidar code
-//  armGripper(CLOSE);      //GOOD
-//  wristRotation(V);       //TODO
 
+//  armGripper(CLOSE);      //GOOD
+//  wristRotate(H);         //GOOD
 //  shoulderMove();         //GOOD
 //  turnTableReset();       //GOOD
 //  elbowMove();            //GOOD
-//  turnTableMove(180, CW);  //GOOD
-  
+//  turnTableMove(180, CW); //GOOD
 //  tailGripper(CLOSE);     //GOOD
 //  driveMove(10, FW, 65);  //GOOD
-
-
-//  Serial.print("Turntable Switch: ");
-//  Serial.print(digitalRead(TURNTABLE_SWITCH));  //turntable switch pin
-//  Serial.print("\t");
-//  Serial.print("Turntable Hall: "); //turntable halle effect sensor pin
-//  Serial.print(digitalRead(TURNTABLE_HALL));
-//  Serial.print("\n");
-//  Serial.print("Wrist Hall: "); //wrist hall effect sensor pin
-//  Serial.print(analogRead(WRIST_HALL));
-//  Serial.print("\n");
   
   delay(10);
 }
 
 void turnTableReset() {
-//  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function 
   if(runArray[4] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
     shoulderMove(400);      //lift shoulder   
     elbowMove();            //center elbow 
@@ -228,13 +217,12 @@ void turnTableReset() {
     shoulderMove();
     Serial.print("\n");
     Serial.print("Turntable and Arm at Zero Position!");
-//    runFlag = 1;
     runArray[4] = 0;
   }
 }
 
 void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed = 127) {
-  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
+  if(runArray[6] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
     float tickTarget = 1.0; //number of encoder ticks required to perform the movement
 
     //convert driveDistance to encoder ticks (90 degrees is approximately 15 ticks)
@@ -316,13 +304,13 @@ void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed =
     delay(30);
     driveLeft.run(0);    //Release motor by setting speed to zero
     driveLeft.stop();
-    runFlag = 1;
+    runArray[6] = 0;
   }
 }
 
 void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
-   if (runFlag == 0) {
-    runFlag = 1;
+   if (runArray[5] == 1) {  //Check flag to prevent unnecessary re-triggering of the function
+    runArray[5] = 0;
     int gripSpeed = 128;   // value: between -255 and 255. It is rarely necessary to change the gripper speed, so it is only a local variable
     Serial.println("Tail Gripper...");
     if (gripState == OPEN) {
@@ -364,7 +352,7 @@ void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
 }
 
 void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65) {   //the turntable will not move if no argument is given.
-  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
+  if(runArray[4] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
     float tickTarget = 1.0;   //number of encoder ticks required to perform the movement
     float conversionRate = 14.0;
 
@@ -422,13 +410,13 @@ void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 
     delay(30);
     turnTable.run(0);    //Release motor by setting speed to zero
     turnTable.stop();
-    runFlag = 1;
+    runArray[4] = 0;
   }
 }
 
 void armGripper(int gripState, int gripTime = ARMGRIPTIME) {
-  if (runFlag == 0) {
-    runFlag = 1;
+  if (runArray[0] == 1) {
+    runArray[0] = 0;
     int gripSpeed = 255;   // value: between -255 and 255. It is rarely necessary to change the gripper speed, so it is only a local variable
     Serial.print("\n");
     Serial.println("Arm Gripper...");
@@ -460,26 +448,70 @@ void armGripper(int gripState, int gripTime = ARMGRIPTIME) {
 }
 
 /*
- * Rotate wrist by declaring the desired end state (REQUIRED), a rotation direction, the number of complete revolutions, and the desired speed.
+ * Rotate wrist by declaring the desired orientation state (REQUIRED), a rotation direction, the number of complete revolutions, and the desired speed.
  */
-void wristRotation(int targetState, int wristDirection = CW, float wristRotation = 0.0, int wristSpeed = 255) {
-  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
-    int count = 0;
-    float switchCount = 0;
+void wristRotate(int targetState, int wristDirection = CW, float wristRevolution = 0.0, int wristSpeed = 255) {
+  if(runArray[1] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
+    int count = 0;    //iterator variable to count the number of hardware screws passed during rotation (number of times the wrist switch is activated)
+    float switchCount = 0;  //number of times the wrist switch is activated. 
+
+    Serial.print("\n");
+    Serial.print("Wrist Rotation!");
+    Serial.print("\n");
+    Serial.print("Wrist Direction: ");
+    if(wristDirection == CW) {
+      Serial.print("CW");
+    }
+    else if(wristDirection == CCW) {
+      Serial.print("CCW");
+    }
+    Serial.print("\n");
+    Serial.print("Target Orientation: ");
+    if(targetState == H) {
+      Serial.print("H");
+    }
+    else if(targetState == V) {
+      Serial.print("V");
+    }
+    Serial.print("\n");
+    
+    //Update wristState
+    if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == LOW) {  //If switch AND hall effect sensors are both "activated" (hall sensor is LOW when active), gripper is HORIZONTAL (H)
+      wristState = H;
+    }
+    else if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == HIGH) { //If switch is activated (HIGH) but hall effect sensor is NOT (hall sensor is LOW when active), gripper is VERTICAL (V)
+      wristState = V;
+    }
+    Serial.print("Start Orientation: ");
+    if(wristState == H) {
+      Serial.print("H");
+    }
+    else if(wristState == V) {
+      Serial.print("V");
+    }
+    Serial.print("\n");
+    Serial.print("Switch State: ");
+    Serial.print(digitalRead(WRIST_SWITCH));
+    Serial.print("\n");
+    Serial.print("\n");
 
     //Set sign of motor speed based on desired rotation direction
-    if(wristDirection == CCW) {
+    if(wristDirection == CCW) {   //rotation direction is determined as if the arm is a part of your body an you are looking down the arm toward the gripper
       wristSpeed = wristSpeed * -1;
     }
-    //Convert wristRotations to required count of switch activations (number of hardware screws that must be passed during rotation)
-    switchCount = int(wristRotation * 4);   //There are 4 hardware screws per one revolution. A fractional value for wristRotation will produce an integer value less than 4.
-    
+    //Convert wristRevolution value to required count of switch activations (number of hardware screws that must be passed during rotation)
+    switchCount = int(wristRevolution * 4);   //There are 4 hardware screws per one revolution. A fractional value for wristRevolution will produce an integer value less than 4.
+    Serial.print("Switch Count: ");
+    Serial.print(switchCount);
+    Serial.print("\n");
+    Serial.print("\n");
     //Initialize wrist postion to the nearest cardinal position (determined by switch activation by one of 4 hardware screws combined with state of hall effect sensor)
-    if(digitalRead(WRIST_SWITCH) == LOW){     //If switch starts in OPEN state (not activated by a hardware screw)
-      armWrist.run(wristSpeed);               //Run motor until switch is activated (which means wrist is in one of the cardinal directions)
+    if(digitalRead(WRIST_SWITCH) == LOW){     //If switch starts in UNPRESSED (LOW) state (switch is NOT currently positioned over a hardware screw)
+      armWrist.run(wristSpeed);               //Run motor until a switch is activated (which means wrist is in one of the cardinal directions)
       while(digitalRead(WRIST_SWITCH) == LOW) {
         //Wait for switch to go HIGH (switch is PRESSED)
       }
+      delay(50);  //Insert slight delay to allow switch roller to fully seat over the hardware screw.
       //Brake motor once switch is activated
       armWrist.stop();
       armWrist.run(-wristSpeed); //Breifly reverse motor direction to brake
@@ -488,21 +520,21 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
       armWrist.stop();
 
       //Update wristState
-      if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect sensors are "activated" (hall sensor is LOW when active), gripper is HORIZONTAL
+      if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == LOW) {  //If switch AND hall effect sensors are both "activated" (hall sensor is LOW when active), gripper is HORIZONTAL (H)
         wristState = H;
       }
-      else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+      else if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == HIGH) { //If switch is activated (HIGH) but hall effect sensor is NOT (hall sensor is LOW when active), gripper is VERTICAL (V)
         wristState = V;
       }
-      if(wristState == targetState && switchCount < 1) {
-        runFlag = 1;
+      if(wristState == targetState && switchCount < 1) {    //if wrist was already in the desired orientation (wrist did not need to move), set flag that movement is finished
+        runArray[1] = 0;
       }
     }
-    else if(digitalRead(WRIST_SWITCH) == HIGH){ //If switch starts in PRESSED state
-      if(wristState == targetState && switchCount < 1) {    //Check if the wrist is already in the desired target state and no additiona rotation is required
-        runFlag = 1;
+    else if(digitalRead(WRIST_SWITCH) == HIGH){ //If switch starts in PRESSED state (switch IS currently positioned over a hardware screw)
+      if(wristState == targetState && switchCount < 1) {    //Check if the wrist is already in the desired target state and no additional rotation is required, set flag that movement is finished
+        runArray[1] = 0;
       }
-      else {
+      else {    //otherwise, if wrist movement IS required...
         if(switchCount >= 1) {
           armWrist.run(wristSpeed);
           while(count < switchCount){   //Wait to pass through the required number of screws
@@ -513,7 +545,14 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
               //Wait for switch to re-activate (move onto the next screw position)
             }
             count++;    //Update count for each new screw detected during rotation
+            Serial.print("Switch Count: ");
+            Serial.print(switchCount);
+            Serial.print("\t");
+            Serial.print("Current Count: ");
+            Serial.print(count);
+            Serial.print("\n");
           }
+          delay(50);  //Insert slight delay to allow switch roller to fully seat over the hardware screw.
           //Brake motor once correct number of screws are passed through
           armWrist.stop();
           armWrist.run(-wristSpeed); //Brake
@@ -522,26 +561,27 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
           armWrist.stop();
   
           //Update wristState once required rotation has completed
-          if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are "activated" (hall sensor is LOW when active), gripper is HORIZONTAL
+          if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == LOW) {  //If switch AND hall effect are "activated" (hall sensor is LOW when active), gripper is HORIZONTAL (H)
             wristState = H;
           }
-          else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+          else if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == HIGH) { //If switch is activated but hall effect sensor is NOT (hall sensor is LOW when active), gripper is VERTICAL (V)
             wristState = V;
           }
         }
       }
       
       if(wristState == targetState) { //If targetState has been achieved after rotation, set flag to finish routine and prevent function from re-running
-        runFlag = 1;
+        runArray[1] = 0;
       }
       else {    //If target state has NOT been achieved after rotation
-        armWrist.run(wristSpeed);   //Run motor until switch is re-activated (which means wrist has rotated 90 degrees to a new cardinal directions but different from the last)
+        armWrist.run(wristSpeed);   //Run motor until switch is re-activated (which means wrist has rotated 90 degrees to a new cardinal direction but different from the last)
         while(digitalRead(WRIST_SWITCH) == HIGH) {
           //Wait for switch to deactivate
         }
         while(digitalRead(WRIST_SWITCH) == LOW) {
           //Wait for switch to re-activate
         }
+        delay(50);  //Insert slight delay to allow switch roller to fully seat over the hardware screw.
         //Brake motor once switch is activated
         armWrist.stop();
         armWrist.run(-wristSpeed); //Reverse motor direction to brake briefly
@@ -550,14 +590,14 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
         armWrist.stop();
   
         //Update wristState
-        if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) < 50) {  //If switch AND hall effect are activated, gripper is HORIZONTAL
+        if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == LOW) {  //If switch AND hall effect are "activated" (hall effect sensor is LOW when activated), gripper is HORIZONTAL (H)
           wristState = H;
         }
-        else if(digitalRead(WRIST_SWITCH) == HIGH && analogRead(WRIST_HALL) > 1000) {
+        else if(digitalRead(WRIST_SWITCH) == HIGH && digitalRead(WRIST_HALL) == HIGH) { //If switch is activated but hall effect sensor is NOT (hall effect sensor is LOW when activated), gripper is VERTICAL (V)
           wristState = V;
         }
         if(wristState == targetState) { //If targetState has been achieved after rotation, set flag to finish routine and prevent function from re-running
-          runFlag = 1;
+          runArray[1] = 0;
         }
       }
     }
@@ -571,7 +611,6 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
  * LowerMax Gripper fully "down" compared to arm bar): 80
  */
 void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
-//  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
   if(runArray[2] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
     if(elbowPosition >= ELBOW_MIN && elbowPosition <= ELBOW_MAX) {   //Check if command value is within allowed range
       int lastPosition = analogRead(ELBOW_POT);   //read encoder position
@@ -615,7 +654,6 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
         elbow.run(0);    //Release motor by setting speed to zero
         elbow.stop();
       }
-//      runFlag = 1;
       runArray[2] = 0;
     }
   }
@@ -628,7 +666,6 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
  * UpperMax (Highest arm bar position): 375
  */
 void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
-//  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
   if(runArray[3] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
     if(shoulderPosition >= SHOULDER_MIN && shoulderPosition <= SHOULDER_MAX) {   //Check if command value is within allowed range.
       int lastPosition = analogRead(SHOULDER_POT);    //get last reading from sensor
@@ -672,7 +709,6 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Defa
         shoulder.run(0);    //Release motor by setting speed to zero
         shoulder.stop();
       }
-//      runFlag = 1;
       runArray[3] = 0;
     }
   }
