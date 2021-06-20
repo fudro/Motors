@@ -42,7 +42,7 @@ MeMegaPiDCMotor turnTable(PORT3B); //Turntable
 MeMegaPiDCMotor elbow(PORT4A); //Elbow
 MeMegaPiDCMotor shoulder(PORT4B); //Shoulder
 
-uint8_t motorSpeed = 100;
+//Direction Constants
 const int OPEN = 0;
 const int CLOSE = 1;
 const int H = 0;    //HORIZONTAL
@@ -51,40 +51,59 @@ const int CW = 0;
 const int CCW = 1;
 const int FW = 1; //Forward
 const int BW = 0; //Backward
-const int WRIST_HALL = 28;  //sensor pin assignment
-const int WRIST_SWITCH = 26;
+//Pin Assignments
+const int WRIST_HALL = 30;  //TODO: Fix pin assignments for wrist
+const int WRIST_SWITCH = 28;
+//TODO: Add Sonar Pins
 const int DRIVE_RIGHT_ENCODER = A11;
 const int DRIVE_LEFT_ENCODER = A10;
 const int ELBOW_POT = A9;
 const int SHOULDER_POT = A8;
-const int TURNTABLE_HALL = 30;
 const int TURNTABLE_ENCODER = A7;
+const int TURNTABLE_HALL = 26;
+const int TURNTABLE_SWITCH = 24;
+//Time Constants
 const int ARMGRIPTIME = 1200; //Time for arm gripper at max speed 255 to go from fully open to fully closed and vice versa.
 const int WRISTTIME = 1000; //Wrist rotation at max speed 255 for 1000 milliseconds is approximately 180 degres of rotation (or one-half turn)
 const int TAILGRIPTIME = 400;  //Time for tail gripper at HALF SPEED (128) to go from fully open to fully closed and vice versa.
+//Potentiometer Limits
 const int ELBOW_MIN = 80; //Limit values for sensor
 const int ELBOW_MAX = 700;
 const int SHOULDER_MIN = 375;
 const int SHOULDER_MAX = 600;
+//Encoder Limits
 const int TURNTABLE_ANALOG_MAX = 875;
 const int TURNTABLE_ANALOG_MIN = 650;
 const int DRIVE_LEFT_ANALOG_MAX = 700;
 const int DRIVE_LEFT_ANALOG_MIN = 400;
 const int DRIVE_RIGHT_ANALOG_MAX = 700;
 const int DRIVE_RIGHT_ANALOG_MIN = 400;
-int wristSwitch = 0;  //store value of hardware switch
-int wristState = H; //current state of wrist, horizontal direction as default
-int turnTableAnalog = 0;  //analog value of turntable encoder
+//State Variables
+int wristSwitch = 0;  //store state of wrist switch
+int wristState = H;   //current state of wrist (H or V), horizontal direction as default
 int turnTableEncoder = 1; //state of turntable encoder. Set initial stae to 1 since this pin is pulled high
-int turnTableCount = 1;  //store value of turntable position based on encoder ticks. Default to 1 for easy math (15 ticks ~ 90 degrees)
-int turnTableHall = 0; //state of turntable hall effect sensor
-int driveLeftCount = 0; //store encoder tick value to track movement
-int driveRightCount = 0;
-int driveLeftAnalog = 0;  //last analog value from sensor, used to set current state of encoder
-int driveRightAnalog = 0;
+int turnTableSwitch = 0;  //state of turntable switch, default state is 0 (LOW)
+int turnTableHall = 1;    //state of turntable hall effect sensor, default state is HIGH, sensor pulls pin LOW when active (magnet present)
 int driveLeftEncoder = 1; //last state of encoder high(1) or low(0), for comparison
 int driveRightEncoder = 1;
-int runFlag = 0;
+//Tracking variables
+int turnTableCount = 1;  //store value of turntable position based on encoder ticks. Default to 1 for easy math (15 ticks ~ 90 degrees)
+int driveLeftCount = 0;  //store encoder tick value to track movement
+int driveRightCount = 0;
+int driveLeftAnalog = 0;  //last analog value from drive encoder, raw analog value is used to set current state of encoder
+int driveRightAnalog = 0;
+int turnTableAnalog = 0;  //last analog value of turntable encoder
+
+int runFlag = 0;    //TODO: Remove runFlag occurrences
+int runArray[] = {0,  //runArray[0]: armGripper
+                  0,  //runArray[1]: wrist
+                  0,  //runArray[2]: elbow
+                  0,  //runArray[3]: shoulder
+                  1,  //runArray[4]: turntable
+                  0,  //runArray[5]: tailGripper
+                  0,  //runArray[6]: drive
+                  0   //runArray[7]: NOT USED
+};
 
 /***********************************
  * FUNCTION PROTOTYPES
@@ -100,13 +119,14 @@ void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed =
 void setup()
 {
   //Setup sensor pins
-  pinMode(WRIST_HALL, INPUT_PULLUP);  //wrist hall effect
+  pinMode(WRIST_HALL, INPUT_PULLUP);  //wrist hall effect, set as pullup since sensor goes LOW when activated
   pinMode(WRIST_SWITCH, INPUT); //wrist switch
   pinMode(DRIVE_LEFT_ENCODER, INPUT_PULLUP);
   pinMode(DRIVE_RIGHT_ENCODER, INPUT_PULLUP);
-  pinMode(ELBOW_POT, INPUT); //elbow potentiomter
+  pinMode(ELBOW_POT, INPUT_PULLUP); //elbow potentiomter
   pinMode(SHOULDER_POT, INPUT_PULLUP); //shoulder potentiometer
-  pinMode(TURNTABLE_HALL, INPUT_PULLUP); //turntable hall effect
+  pinMode(TURNTABLE_SWITCH, INPUT); //turntable switch
+  pinMode(TURNTABLE_HALL, INPUT_PULLUP); //turntable hall effect, set as pullup since sensor goes LOW when activated
   pinMode(TURNTABLE_ENCODER, INPUT_PULLUP); //turntable encoder
   Serial.begin(115200);
   Serial.println("HomeBot Sensor Ranges Test!");
@@ -117,18 +137,101 @@ void setup()
 
 void loop()
 {
-//  armGripper(OPEN);
-//  wristRotation(V);
-//  elbowMove();b
-//  shoulderMove();
-//  turnTableMove(45, CW);
+//TODO: Add IMU code
+//TODO: Add Sonar code
+//TODO: Add Lidar code
+//  armGripper(CLOSE);      //GOOD
+//  wristRotation(V);       //TODO
+
+//  shoulderMove();         //GOOD
+//  turnTableReset();       //GOOD
+//  elbowMove();            //GOOD
+//  turnTableMove(180, CW);  //GOOD
+  
 //  tailGripper(CLOSE);     //GOOD
 //  driveMove(10, FW, 65);  //GOOD
 
+
+//  Serial.print("Turntable Switch: ");
+//  Serial.print(digitalRead(TURNTABLE_SWITCH));  //turntable switch pin
+//  Serial.print("\t");
+//  Serial.print("Turntable Hall: "); //turntable halle effect sensor pin
+//  Serial.print(digitalRead(TURNTABLE_HALL));
+//  Serial.print("\n");
+//  Serial.print("Wrist Hall: "); //wrist hall effect sensor pin
+//  Serial.print(analogRead(WRIST_HALL));
+//  Serial.print("\n");
+  
   delay(10);
 }
 
+void turnTableReset() {
+//  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function 
+  if(runArray[4] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
+    shoulderMove(400);      //lift shoulder   
+    elbowMove();            //center elbow 
+    Serial.print("\n");
+    Serial.println("Turntable Reset!");
+    Serial.print("\n");
+    int turnSpeed = 65;   //Set to one quarter maximum speed
+    //Default direction is CCW which is what we want so no change necessary.
+    turnTable.run(turnSpeed);
+    while (turnTableSwitch < 1) {   //while turntable switch is not activated.
+      turnTableSwitch = digitalRead(TURNTABLE_SWITCH);
+      if(turnTableSwitch > 0) { //if turntable reaches physical limit (indicated by switch HIGH), then stop motor.
+        //Brake motor once limit switch is activated
+        turnTable.stop();
+        turnTable.run(-turnSpeed); //Reverse motor direction to brake briefly
+        delay(30);
+        turnTable.run(0);    //Release motor by setting speed to zero
+        turnTable.stop();
+      }
+      Serial.print("Turntable Switch: ");
+      Serial.print(turnTableSwitch);
+      Serial.print("\n");
+      
+      delay (10);
+    }
+    //Brake motor once encoder tick count is achaieved
+    turnTable.stop();
+    turnTable.run(-turnSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    turnTable.run(0);    //Release motor by setting speed to zero
+    turnTable.stop();
+    delay(1000);
 
+    //Rotate CW until both turntable switch and hall effect sensor are LOW
+    //Set direction for CCW
+    turnSpeed = turnSpeed * -1;
+    Serial.print("\n");
+    Serial.println("Turntable to: Zero Position");
+    Serial.print("\n");
+    turnTable.run(turnSpeed);
+    while (turnTableHall > 0) {   //while turntable switch is not activated.
+      turnTableHall = digitalRead(TURNTABLE_HALL);
+      
+      Serial.print("Turntable Hall: ");
+      Serial.print(turnTableHall);
+      Serial.print("\n");
+      
+      delay (10);
+    }
+    delay(100); //pause briefly to allow arm to truly center. extra time is required due to detection angle of sensor and arm turn speed.
+    //Brake motor once limit switch is activated
+    turnTable.stop();
+    turnTable.run(-turnSpeed); //Reverse motor direction to brake briefly
+    delay(30);
+    turnTable.run(0);    //Release motor by setting speed to zero
+    turnTable.stop();
+
+    runArray[3] = 1;  //reset shoulder motor flag to active so the shoulderMove function can run again
+    shoulderMove();
+    Serial.print("\n");
+    Serial.print("Turntable and Arm at Zero Position!");
+//    runFlag = 1;
+    runArray[4] = 0;
+  }
+}
 
 void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed = 127) {
   if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
@@ -179,11 +282,11 @@ void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed =
       Serial.print("\t");
       Serial.print("\t");
 
-      if(driveRightAnalog > DRIVE_RIGHT_ANALOG_MAX && driveRightEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set the sensor to HIGH and increment the tick count.
+      if(driveRightAnalog > DRIVE_RIGHT_ANALOG_MAX && driveRightEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set the sensor state to HIGH and increment the tick count.
         driveRightEncoder = 1;
         driveRightCount++;
       }
-      else if(driveRightAnalog < DRIVE_RIGHT_ANALOG_MIN && driveRightEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor to LOW and wait for next trigger.
+      else if(driveRightAnalog < DRIVE_RIGHT_ANALOG_MIN && driveRightEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor state to LOW and wait for next trigger.
         driveRightEncoder = 0;
       }
       Serial.print("R: ");
@@ -260,47 +363,60 @@ void tailGripper(int gripState, int gripTime = TAILGRIPTIME) {
   }
 }
 
-void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65) {
+void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65) {   //the turntable will not move if no argument is given.
   if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
-    float tickTarget = 1.0;
+    float tickTarget = 1.0;   //number of encoder ticks required to perform the movement
+    float conversionRate = 14.0;
 
-    //convert turnDegrees to encoder ticks (90 degrees is approximately 15 ticks)
-    if(turnDegrees > 0) {
-      tickTarget = round((turnDegrees / 90.0) * 15);  //round up to nearest integer value
-      Serial.print("Turn Degrees: ");
-      Serial.println(turnDegrees);
-      Serial.print("TickTarget: ");
-      Serial.println(tickTarget);
-    }
-    
+    Serial.print("\n");
     //Set sign of motor speed based on desired rotation direction
     if(turnDirection == CW) {
       turnSpeed = turnSpeed * -1;
+      conversionRate = 14.28;
       Serial.println("Turntable CW");
     }
     else {
+      conversionRate = 14.24;   //adjust tick taget due to tension from the main cable.
       Serial.println("Turntable CCW");
+    }
+    
+    //convert turnDegrees to encoder ticks (90 degrees is approximately 14 ticks)
+    if(turnDegrees > 0) {
+      tickTarget = round((turnDegrees / 90.0) * conversionRate);  //round up to nearest integer value
+      Serial.print("Turn Degrees: ");
+      Serial.print(turnDegrees);
+      Serial.print("\n");
+      Serial.print("Conversion Rate: ");
+      Serial.print(conversionRate);
+      Serial.print("\n");
+      Serial.print("TickTarget: ");
+      Serial.print(tickTarget);
+      Serial.print("\n");
     }
 
     turnTable.run(turnSpeed);
     while (turnTableCount < tickTarget) {
       turnTableAnalog = analogRead(TURNTABLE_ENCODER);
-      if(turnTableAnalog > TURNTABLE_ANALOG_MAX && turnTableEncoder == 0) {
+      if(turnTableAnalog > TURNTABLE_ANALOG_MAX && turnTableEncoder == 0) { //if encoder value passes the threshold for HIGH, and the current state of the sensor is LOW, set sensor state to HIGH and increment the tick count.
         turnTableEncoder = 1;
-        turnTableCount++;
+        turnTableCount++;   //Increment encoder tick count each time th sensor reads HIGH
       }
-      else if(turnTableAnalog < TURNTABLE_ANALOG_MIN && turnTableEncoder == 1) {
+      else if(turnTableAnalog < TURNTABLE_ANALOG_MIN && turnTableEncoder == 1) {  //if encoder value goes below the threshold for LOW, and the current state of the sensor is HIGH, set the sensor state to LOW and wait for next trigger.
         turnTableEncoder = 0;
       }
+      Serial.print("Turntable: ");
+      Serial.print("A ");
       Serial.print(turnTableAnalog);
       Serial.print("\t");
+      Serial.print("E ");
       Serial.print(turnTableEncoder);
       Serial.print("\t");
+      Serial.print("C ");
       Serial.println(turnTableCount);
       delay (10);
     }
     
-    //Brake motor once switch is activated
+    //Brake motor once encoder tick count is achaieved
     turnTable.stop();
     turnTable.run(-turnSpeed); //Reverse motor direction to brake briefly
     delay(30);
@@ -314,6 +430,7 @@ void armGripper(int gripState, int gripTime = ARMGRIPTIME) {
   if (runFlag == 0) {
     runFlag = 1;
     int gripSpeed = 255;   // value: between -255 and 255. It is rarely necessary to change the gripper speed, so it is only a local variable
+    Serial.print("\n");
     Serial.println("Arm Gripper...");
     if (gripState == OPEN) {
       Serial.println("Arm Open:");
@@ -327,6 +444,7 @@ void armGripper(int gripState, int gripTime = ARMGRIPTIME) {
       armGrip.stop();
     }
     else if (gripState == CLOSE) {
+      Serial.print("\n");
       Serial.println("Arm Close:");
       Serial.print("Speed: ");
       Serial.println(-gripSpeed);
@@ -453,44 +571,52 @@ void wristRotation(int targetState, int wristDirection = CW, float wristRotation
  * LowerMax Gripper fully "down" compared to arm bar): 80
  */
 void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
-  if(elbowPosition >= ELBOW_MIN && elbowPosition <= ELBOW_MAX) {   //Check ranges
-    if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
-      int lastPosition = analogRead(ELBOW_POT);
-      if(elbowPosition < lastPosition) {  //If the desired postion is lower than the current position.
+//  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
+  if(runArray[2] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
+    if(elbowPosition >= ELBOW_MIN && elbowPosition <= ELBOW_MAX) {   //Check if command value is within allowed range
+      int lastPosition = analogRead(ELBOW_POT);   //read encoder position
+      if(elbowPosition < lastPosition) {  //If the desired postion is physically LOWER than the last read position.
+        Serial.print("\n");
         Serial.println("Elbow Down");
         Serial.print("Target Position: ");
-        Serial.println(elbowPosition);
-        while(elbowPosition < lastPosition) {
-          elbow.run(-elbowSpeed);
-          delay(100);
-          lastPosition = analogRead(ELBOW_POT);
+        Serial.print(elbowPosition);
+        Serial.print("\n\n");
+        while(elbowPosition < lastPosition) {   //while target positiion is still lower than the last read position
+          elbow.run(-elbowSpeed);   //set motor direction
+          delay(10);               //wait for small amount of elbow movement
+          lastPosition = analogRead(ELBOW_POT);   //get new position
+          Serial.print("Elbow Position: ");
           Serial.println(lastPosition);
         }
-        //Brake motor once switch is activated
+        //Brake motor once target position is reached
         elbow.stop();
         elbow.run(elbowSpeed); //Reverse motor direction to brake briefly
         delay(30);
         elbow.run(0);    //Release motor by setting speed to zero
         elbow.stop();
       }
-      else if(elbowPosition > lastPosition) {  //If the desired postion is lower than the current position.
+      else if(elbowPosition > lastPosition) {  //If the desired postion is physically HIGHER than the last read position.
+        Serial.print("\n");
         Serial.println("Elbow Up");
+        Serial.print("Target Position: ");
+        Serial.print(elbowPosition);
+        Serial.print("\n\n");
         while(elbowPosition > lastPosition) {
           elbow.run(elbowSpeed);
-          delay(100);
+          delay(10);
           lastPosition = analogRead(ELBOW_POT);
+          Serial.print("Elbow Position: ");
           Serial.println(lastPosition);
         }
-        //Brake motor once switch is activated
+        //Brake motor once target position is reached
         elbow.stop();
         elbow.run(-elbowSpeed); //Reverse motor direction to brake briefly
         delay(30);
         elbow.run(0);    //Release motor by setting speed to zero
         elbow.stop();
       }
-      runFlag = 1;
-//  Serial.print("Elbow Position: ");
-//  Serial.println(analogRead(ELBOW_POT));
+//      runFlag = 1;
+      runArray[2] = 0;
     }
   }
 }
@@ -498,21 +624,25 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
 /*
  * SHOULDER RANGES
  * LowerMax (Lowest arm bar "down" position over rear of robot): 600
- * MidPoint (Gripper roughly "level" with arm bar): 550
+ * MidPoint (Gripper roughly "level" with arm bar): 575
  * UpperMax (Highest arm bar position): 375
  */
 void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
-  if(shoulderPosition >= SHOULDER_MIN && shoulderPosition <= SHOULDER_MAX) {   //Check ranges
-    if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
-      int lastPosition = analogRead(SHOULDER_POT);
-      if(shoulderPosition < lastPosition) {  //If the desired postion is lower than the current position.
+//  if(runFlag == 0) {    //Check flag to prevent unnecessary re-triggering of the function
+  if(runArray[3] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
+    if(shoulderPosition >= SHOULDER_MIN && shoulderPosition <= SHOULDER_MAX) {   //Check if command value is within allowed range.
+      int lastPosition = analogRead(SHOULDER_POT);    //get last reading from sensor
+      if(shoulderPosition < lastPosition) {  //If the desired postion is physically HIGHER than the last read position.
+        Serial.print("\n");
         Serial.println("Shoulder Up");
         Serial.print("Target Position: ");
-        Serial.println(shoulderPosition);
+        Serial.print(shoulderPosition);
+        Serial.print("\n\n");
         while(shoulderPosition < lastPosition) {
-          shoulder.run(-shoulderSpeed);
-          delay(100);
-          lastPosition = analogRead(SHOULDER_POT);
+          shoulder.run(-shoulderSpeed);     //set motor direction
+          delay(70);                       //wait for small amount of shoulder movement
+          lastPosition = analogRead(SHOULDER_POT);    //get new position
+          Serial.print("Shoulder Postition: ");
           Serial.println(lastPosition);
         }
         //Brake motor once switch is activated
@@ -522,14 +652,17 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Defa
         shoulder.run(0);    //Release motor by setting speed to zero
         shoulder.stop();
       }
-      else if(shoulderPosition > lastPosition) {  //If the desired postion is lower than the current position.
+      else if(shoulderPosition > lastPosition) {  //If the desired postion is physically LOWER than the last read position.
+        Serial.print("\n");
         Serial.println("Shoulder Down");
         Serial.print("Target Position: ");
-        Serial.println(shoulderPosition);
+        Serial.print(shoulderPosition);
+        Serial.print("\n\n");
         while(shoulderPosition > lastPosition) {
           shoulder.run(shoulderSpeed);
-          delay(100);
+          delay(70);
           lastPosition = analogRead(SHOULDER_POT);
+          Serial.print("Shoulder Position: ");
           Serial.println(lastPosition);
         }
         //Brake motor once switch is activated
@@ -539,7 +672,8 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Defa
         shoulder.run(0);    //Release motor by setting speed to zero
         shoulder.stop();
       }
-      runFlag = 1;
+//      runFlag = 1;
+      runArray[3] = 0;
     }
   }
 }
