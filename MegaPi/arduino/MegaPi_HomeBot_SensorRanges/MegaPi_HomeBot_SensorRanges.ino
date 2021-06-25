@@ -32,7 +32,13 @@
  * 
  */
 #include "MeMegaPi.h"
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
 
+#define IMU   //Use flag when using IMU otherwhise an error will be thrown is the sensor is not connected.
+//Set up MegoPi motor ports
 MeMegaPiDCMotor armGrip(PORT1A); //Arm Gripper
 MeMegaPiDCMotor armWrist(PORT1B); //Wrist
 MeMegaPiDCMotor driveRight(PORT2A); //Drive Right, based on the sonar unit being the "front" of the robot
@@ -41,6 +47,10 @@ MeMegaPiDCMotor tailGrip(PORT3A); //Tail Gripper
 MeMegaPiDCMotor turnTable(PORT3B); //Turntable
 MeMegaPiDCMotor elbow(PORT4A); //Elbow
 MeMegaPiDCMotor shoulder(PORT4B); //Shoulder
+
+//Set up IMU sensor (BNO055)
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
+
 
 //Direction Constants
 const int OPEN = 0;
@@ -51,23 +61,30 @@ const int CW = 0;
 const int CCW = 1;
 const int FW = 1; //Forward
 const int BW = 0; //Backward
-//Pin Assignments
-//TODO: Add Sonar Pins
 //TODO: Add Lidar Pins
-//TODO: Add IMU Pins
+//TODO: Add IMU Pins I2C is complete. Need to Add: (Reset), and test reset of unit (zero heading)
+//Pin Assignments
+const int IMU_RESET = 39;
 const int WRIST_HALL = 30;
 const int WRIST_SWITCH = 28;
+const int TURNTABLE_HALL = 26;
+const int TURNTABLE_SWITCH = 24;
+const int SONAR_RIGHT = A14;
+const int SONAR_CENTER = A13;
+const int SONAR_LEFT = A12;
 const int DRIVE_RIGHT_ENCODER = A11;
 const int DRIVE_LEFT_ENCODER = A10;
 const int ELBOW_POT = A9;
 const int SHOULDER_POT = A8;
 const int TURNTABLE_ENCODER = A7;
-const int TURNTABLE_HALL = 26;
-const int TURNTABLE_SWITCH = 24;
+const int SONAR_TRIGGER = A6;
 //Time Constants
 const int ARMGRIPTIME = 1200; //Time for arm gripper at max speed 255 to go from fully open to fully closed and vice versa.
 const int WRISTTIME = 1000; //Wrist rotation at max speed 255 for 1000 milliseconds is approximately 180 degres of rotation (or one-half turn)
 const int TAILGRIPTIME = 400;  //Time for tail gripper at HALF SPEED (128) to go from fully open to fully closed and vice versa.
+//Sonar Constants
+int NUM_SAMPLES = 9;
+int SAMPLE_OFFSET = 3;  //number of entries from the max entry of the sorted array
 //Potentiometer Limits
 const int ELBOW_MIN = 80; //Limit values for sensor
 const int ELBOW_MAX = 700;
@@ -95,16 +112,29 @@ int driveRightCount = 0;
 int driveLeftAnalog = 0;  //last analog value from drive encoder, raw analog value is used to set current state of encoder
 int driveRightAnalog = 0;
 int turnTableAnalog = 0;  //last analog value of turntable encoder
+int sort_count = 0; //track the last ten selected sonar values
+int left_sonar[10];    //arrays to store sonar readings
+int center_sonar[10];
+int right_sonar[10];
+int left_sort_array[10]; //arrays to hold last 10 selected values from sorted sonar reading arrays
+int center_sort_array[10];
+int right_sort_array[10];
+int range_left = 0;    //calculated sonar range for each sensor
+int range_center = 0;
+int range_right = 0;
+//Test Variables
+int count = 0;    //test variable
+int runFlag = 1;  //test variable
 
 //the runArray[] determines which motor functions are active (0 = inactive, 1 = active). Event if code is called by the main loop, the flag array will prevent code execution if motor is not set to "active" (1)
 int runArray[] = {0,  //runArray[0]: armGripper
-                  1,  //runArray[1]: wrist
+                  0,  //runArray[1]: wrist
                   0,  //runArray[2]: elbow
                   0,  //runArray[3]: shoulder
-                  0,  //runArray[4]: turntable
+                  1,  //runArray[4]: turntable
                   0,  //runArray[5]: tailGripper
                   0,  //runArray[6]: drive
-                  0   //runArray[7]: NOT USED
+                  1   //runArray[7]: sonar
 };
 
 /***********************************
@@ -120,7 +150,7 @@ void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed =
 
 void setup()
 {
-  //Setup sensor pins
+  //Set up MegaPi sensor pins
   pinMode(WRIST_HALL, INPUT_PULLUP);  //wrist hall effect, set as pullup since sensor goes LOW when activated
   pinMode(WRIST_SWITCH, INPUT); //wrist switch
   pinMode(DRIVE_LEFT_ENCODER, INPUT_PULLUP);
@@ -130,17 +160,32 @@ void setup()
   pinMode(TURNTABLE_SWITCH, INPUT); //turntable switch
   pinMode(TURNTABLE_HALL, INPUT_PULLUP); //turntable hall effect, set as pullup since sensor goes LOW when activated
   pinMode(TURNTABLE_ENCODER, INPUT_PULLUP); //turntable encoder
+  pinMode(IMU_RESET, OUTPUT);
+  digitalWrite(IMU_RESET, HIGH);  //pull IMU reset pin low to trigger reset
+  pinMode(SONAR_TRIGGER, OUTPUT);
+  digitalWrite(SONAR_TRIGGER, LOW);
+  //Set up serial communications
   Serial.begin(115200);
   Serial.println("HomeBot Sensor Ranges Test!");
   delay(1000);
   Serial.println("StartingTest in 3 seconds...");
   delay(3000);
+  #ifdef IMU
+  //IMU Sensor (BNO055) This sensor uses I2C so no pin additional assignments are necessary 
+  /* Initialise the sensor */
+  if(!bno.begin())
+  {
+    /* Check if there was a problem detecting the BNO055 ... display a warning */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+  delay(1000);
+  bno.setExtCrystalUse(true);   //advanced setup (I don;t know what this actually does)
+  #endif
 }
 
 void loop()
 {
-//TODO: Add IMU code
-//TODO: Add Sonar code
 //TODO: Add Lidar code
 
 //  armGripper(CLOSE);      //GOOD
@@ -148,11 +193,35 @@ void loop()
 //  shoulderMove();         //GOOD
 //  turnTableReset();       //GOOD
 //  elbowMove();            //GOOD
-//  turnTableMove(180, CW); //GOOD
+//  turnTableMove(90, CW); //GOOD
 //  tailGripper(CLOSE);     //GOOD
 //  driveMove(10, FW, 65);  //GOOD
-  
+//  getIMU();               //GOOD
+//  getSonar();             //GOOD
   delay(10);
+}
+
+void getIMU(){
+  if(runFlag == 1) {
+    /* Get a new sensor event */ 
+    sensors_event_t event; 
+    bno.getEvent(&event);
+    
+    /* Display the floating point data */
+    Serial.print("YAW/COMPASS(X): ");  //Based on "top-down" view: Clockwise subtracts from the current angle, Counte-Clockwise increases the current angle. 
+                                    //Angle is based on 360 degrees with the ZERO based on the position/angle of the sensor at the time of sensor initialization.
+    Serial.print(event.orientation.x, 2); //second parameter sets the number of decimal places
+    Serial.print("\t");
+    Serial.print("ROLL(Y): "); //Based on the Sonar Unit being the "front" of the robot: 
+                            //Roll to Left (CCW) = Negative Value, Roll to Right (CW) = Positive Value
+    Serial.print(event.orientation.y, 2);
+    Serial.print("\t");
+    Serial.print("PITCH(Z): ");  //Based on the Sonar Unit being the "front" of the robot: 
+                              //Pitch Forward = Negative Value (going lower, "downhill"), Pitch Backward = Positive Value (going higher, "uphill")
+    Serial.print(event.orientation.z, 2);
+    Serial.print("\n");
+    delay(100);
+  }
 }
 
 void turnTableReset() {
@@ -360,11 +429,11 @@ void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 
     //Set sign of motor speed based on desired rotation direction
     if(turnDirection == CW) {
       turnSpeed = turnSpeed * -1;
-      conversionRate = 14.28;
+      conversionRate = 14.5;
       Serial.println("Turntable CW");
     }
     else {
-      conversionRate = 14.24;   //adjust tick taget due to tension from the main cable.
+      conversionRate = 14.25;   //adjust tick taget due to tension from the main cable.
       Serial.println("Turntable CCW");
     }
     
@@ -714,4 +783,63 @@ void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Defa
   }
 }
 
+void getSonar() {
+  if(runArray[7] == 1) {
+    digitalWrite(SONAR_TRIGGER, HIGH);   //pull HIGH to activate first sensor in the chain
+    delay(20);
+    digitalWrite(SONAR_TRIGGER, LOW);
+    delay(20);
+  
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+      left_sonar[i] = analogRead(SONAR_LEFT);
+      center_sonar[i] = analogRead(SONAR_CENTER);
+      right_sonar[i] = analogRead(SONAR_RIGHT);
+    }
+  
+    sort(left_sonar, NUM_SAMPLES);
+    sort(center_sonar, NUM_SAMPLES);
+    sort(right_sonar, NUM_SAMPLES);
+  
+    if(sort_count < NUM_SAMPLES) {
+      left_sort_array[sort_count] = left_sonar[NUM_SAMPLES - SAMPLE_OFFSET]/2;
+      center_sort_array[sort_count] = center_sonar[NUM_SAMPLES - SAMPLE_OFFSET]/2;
+      right_sort_array[sort_count] = right_sonar[NUM_SAMPLES - SAMPLE_OFFSET]/2;
+      sort_count++;
+    }
+    else {
+      sort_count = 0;
+      sort(left_sort_array, NUM_SAMPLES);
+      sort(center_sort_array, NUM_SAMPLES);
+      sort(right_sort_array, NUM_SAMPLES);
+      Serial.print("Sonar Ranges: ");
+      Serial.print("\t");
+      Serial.print("L: ");
+      Serial.print(left_sort_array[NUM_SAMPLES - SAMPLE_OFFSET]);
+      Serial.print("\t");
+      Serial.print("C: ");
+      Serial.print(center_sort_array[NUM_SAMPLES - SAMPLE_OFFSET]);
+      Serial.print("\t");
+      Serial.print("R: ");
+      Serial.print(right_sort_array[NUM_SAMPLES - SAMPLE_OFFSET]);
+      Serial.print("\n");
+      runArray[7] = 0;
+    }
+  
+    memset(left_sonar, 0, sizeof(left_sonar));    //reset arrays
+    memset(center_sonar, 0, sizeof(center_sonar));
+    memset(right_sonar, 0, sizeof(right_sonar));
+  }
+}
+
+void sort(int a[], int size) {
+  for(int i=0; i<(size-1); i++) {
+    for(int o=0; o<(size-(i+1)); o++) {
+      if(a[o] > a[o+1]) {
+          int t = a[o];
+          a[o] = a[o+1];
+          a[o+1] = t;
+      }
+    }
+  }
+}
   
