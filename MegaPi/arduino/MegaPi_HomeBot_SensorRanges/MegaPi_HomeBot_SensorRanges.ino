@@ -62,9 +62,8 @@ const int CCW = 1;
 const int FW = 1; //Forward
 const int BW = 0; //Backward
 //TODO: Add Lidar Pins
-//TODO: Add IMU Pins I2C is complete. Need to Add: (Reset), and test reset of unit (zero heading)
 //Pin Assignments
-const int IMU_RESET = 39;
+const int IMU_RESET = 39;   //This reset functionality does not work yet. The sensor doesn't fully recover after reset because it also needs to be re-initialized.
 const int WRIST_HALL = 30;
 const int WRIST_SWITCH = 28;
 const int TURNTABLE_HALL = 26;
@@ -127,14 +126,14 @@ int count = 0;    //test variable
 int runFlag = 1;  //test variable
 
 //the runArray[] determines which motor functions are active (0 = inactive, 1 = active). Event if code is called by the main loop, the flag array will prevent code execution if motor is not set to "active" (1)
-int runArray[] = {0,  //runArray[0]: armGripper
+int runArray[] = {1,  //runArray[0]: armGripper
                   0,  //runArray[1]: wrist
                   0,  //runArray[2]: elbow
                   0,  //runArray[3]: shoulder
-                  1,  //runArray[4]: turntable
+                  0,  //runArray[4]: turntable
                   0,  //runArray[5]: tailGripper
                   0,  //runArray[6]: drive
-                  1   //runArray[7]: sonar
+                  0   //runArray[7]: sonar
 };
 
 /***********************************
@@ -188,7 +187,7 @@ void loop()
 {
 //TODO: Add Lidar code
 
-//  armGripper(CLOSE);      //GOOD
+  armGripper(CLOSE);      //GOOD
 //  wristRotate(H);         //GOOD
 //  shoulderMove();         //GOOD
 //  turnTableReset();       //GOOD
