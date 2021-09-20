@@ -674,7 +674,7 @@ void wristRotate(int targetState, int wristDirection = CW, float wristRevolution
 
 /*
  * ELBOW RANGES
- * UpperMax Gripper fully "up" against arm bar): 760
+ * UpperMax Gripper fully "up" against arm bar): 700
  * MidPoint (Gripper roughly "level" with arm bar): 500
  * LowerMax Gripper fully "down" compared to arm bar): 80
  */
