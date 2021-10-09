@@ -85,10 +85,11 @@ const int TAILGRIPTIME = 400;  //Time for tail gripper at HALF SPEED (128) to go
 int NUM_SAMPLES = 9;
 int SAMPLE_OFFSET = 3;  //number of entries from the max entry of the sorted array
 //Potentiometer Limits
-const int ELBOW_MIN = 80; //Limit values for sensor
-const int ELBOW_MAX = 700;
-const int SHOULDER_MIN = 375;
-const int SHOULDER_MAX = 600;
+const int ELBOW_MAX = 700;  //Elbow UPPER limit
+const int ELBOW_GRIP = 250; //Best position where the arm gripper can transfer an object to the tail gripper.
+const int ELBOW_MIN = 20; //Elbow LOWER limit
+const int SHOULDER_MAX = 400; //Shoulder UPPER limit. REVERSED: sensor value DECREASES when the arm is moving UP.
+const int SHOULDER_MIN = 600; //Shoulder LOWER limit. REVERSED: sensor value INCREASES when the arm is moving DOWN.
 //Encoder Limits
 const int TURNTABLE_ANALOG_MAX = 875;
 const int TURNTABLE_ANALOG_MIN = 650;
@@ -127,11 +128,11 @@ int runFlag = 1;  //test variable
 
 //the runArray[] determines which motor functions are active (0 = inactive, 1 = active). Event if code is called by the main loop, the flag array will prevent code execution if motor is not set to "active" (1)
 int runArray[] = {1,  //runArray[0]: armGripper
-                  0,  //runArray[1]: wrist
-                  0,  //runArray[2]: elbow
-                  0,  //runArray[3]: shoulder
-                  0,  //runArray[4]: turntable
-                  0,  //runArray[5]: tailGripper
+                  1,  //runArray[1]: wrist
+                  1,  //runArray[2]: elbow
+                  1,  //runArray[3]: shoulder
+                  1,  //runArray[4]: turntable
+                  1,  //runArray[5]: tailGripper
                   0,  //runArray[6]: drive
                   0   //runArray[7]: sonar
 };
@@ -142,7 +143,7 @@ int runArray[] = {1,  //runArray[0]: armGripper
 void armGripper(int gripState, int gripTime = ARMGRIPTIME); //gripState is OPEN or CLOSE
 void wristRotate (int targetState, int wristDirection = CW, float wristRevolution = 0.0, int wristSpeed = 255);  //targetState is (V)ertical or (H)orizontal, wristRevolution is the number of full revolutions to be perfomed.
 void elbowMove(int elbowPosition = 500, int elbowSpeed = 65);  //approximate center position and preferred default speed.
-void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127); //approximate center position and preferred default speed.
+void shoulderMove(int shoulderPosition = 550, int shoulderSpeed = 127); //approximate center position and preferred default speed.
 void turnTableMove(int turnDegrees = 0, int turnDirection = CW, int turnSpeed = 65);    //turnDegrees is the degrees of angular rotation from the current position
 void tailGripper(int gripState, int gripTime = TAILGRIPTIME); //gripState is OPEN or CLOSE
 void driveMove(int driveDistance = 20, int driveDirection = FW, int driveSpeed = 127);
@@ -187,17 +188,41 @@ void loop()
 {
 //TODO: Add Lidar code
 
-  armGripper(CLOSE);      //GOOD
-//  wristRotate(H);         //GOOD
+//  armGripper(OPEN);      //GOOD
+//  wristRotate(H, CW, 1.0);         //GOOD
+//  elbowMove();            //GOOD
 //  shoulderMove();         //GOOD
 //  turnTableReset();       //GOOD
-//  elbowMove();            //GOOD
-//  turnTableMove(90, CW); //GOOD
+//  turnTableMove(180, CW); //GOOD   REMEMBER: CW goes from tail gripper to sonar. The angle argument counts from the current position. It DOES NOT mean the actual angle in relation to the robot's forward face.
 //  tailGripper(CLOSE);     //GOOD
 //  driveMove(10, FW, 65);  //GOOD
 //  getIMU();               //GOOD
 //  getSonar();             //GOOD
-  delay(10);
+//  testWrist();
+//  delay(10);
+}
+
+void testWrist() {
+  Serial.println("Wrist Test!");
+  int wristSpeed = 255;
+  armWrist.run(wristSpeed);               //Run motor until a switch is activated (which means wrist is in one of the cardinal directions)
+  delay(3000);  //Insert slight delay to allow switch roller to fully seat over the hardware screw.
+  //Brake motor once switch is activated
+  armWrist.stop();
+  armWrist.run(-wristSpeed); //Breifly reverse motor direction to brake
+  delay(30);
+  armWrist.run(0);    //Release motor by setting speed to zero
+  armWrist.stop();
+  delay(2000);
+  armWrist.run(-wristSpeed);               //Run motor until a switch is activated (which means wrist is in one of the cardinal directions)
+  delay(3000);  //Insert slight delay to allow switch roller to fully seat over the hardware screw.
+  //Brake motor once switch is activated
+  armWrist.stop();
+  armWrist.run(wristSpeed); //Breifly reverse motor direction to brake
+  delay(30);
+  armWrist.run(0);    //Release motor by setting speed to zero
+  armWrist.stop();
+  delay(2000);
 }
 
 void getIMU(){
@@ -225,7 +250,7 @@ void getIMU(){
 
 void turnTableReset() {
   if(runArray[4] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
-    shoulderMove(400);      //lift shoulder   
+    shoulderMove();      //lift shoulder to center position
     elbowMove();            //center elbow 
     Serial.print("\n");
     Serial.println("Turntable Reset!");
@@ -733,9 +758,9 @@ void elbowMove(int elbowPosition = 500, int elbowSpeed = 65) { //Default values 
  * MidPoint (Gripper roughly "level" with arm bar): 575
  * UpperMax (Highest arm bar position): 375
  */
-void shoulderMove(int shoulderPosition = 575, int shoulderSpeed = 127) {  //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
+void shoulderMove(int shoulderPosition = 550, int shoulderSpeed = 127) {  //Default values allow the function to be called without arguments to reset to a default position (at the default speed).
   if(runArray[3] == 1) {    //Check flag to prevent unnecessary re-triggering of the function
-    if(shoulderPosition >= SHOULDER_MIN && shoulderPosition <= SHOULDER_MAX) {   //Check if command value is within allowed range.
+    if(shoulderPosition <= SHOULDER_MIN && shoulderPosition >= SHOULDER_MAX) {   //Check if command value is within allowed range. REVERSED: sensor values INCREASE when arm moves DOWN.
       int lastPosition = analogRead(SHOULDER_POT);    //get last reading from sensor
       if(shoulderPosition < lastPosition) {  //If the desired postion is physically HIGHER than the last read position.
         Serial.print("\n");
