@@ -189,7 +189,7 @@ void loop()
 //TODO: Add Lidar code
 
 //  armGripper(OPEN);      //GOOD
-//  wristRotate(H, CW, 1.0);         //GOOD
+  wristRotate(H, CW, 1.0);         //GOOD
 //  elbowMove();            //GOOD
 //  shoulderMove();         //GOOD
 //  turnTableReset();       //GOOD
