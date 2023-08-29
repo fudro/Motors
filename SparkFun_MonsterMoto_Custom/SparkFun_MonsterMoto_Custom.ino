@@ -12,8 +12,12 @@
  * 
  * REFERENCE:
  * https://www.sparkfun.com/products/retired/10182
+ *
+ * IMPORTANT:
+ * Make sure the pin assignments are as follows: 
+ * out1_A = 7, out1_B = 8, out2_A = 4, out2_B = 9
+ * Otherwise the wheel rotation directions may not work as expected.
  */
-
  int out1_A = 7;
  int out1_B = 8;
  int out2_A = 4;

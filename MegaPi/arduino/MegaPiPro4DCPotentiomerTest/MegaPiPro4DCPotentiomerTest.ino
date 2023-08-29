@@ -41,6 +41,8 @@ MeDCMotor motor4(M12);
 
 uint8_t motorSpeed = 250;
 int potValue = 0;
+int targetValue = 500;
+int runFlag = 0;
 
 void setup()
 {
@@ -51,33 +53,45 @@ void setup()
 
 void loop()
 {
+  shoulderMove();
+}
+
+void displayValue() {
   potValue = analogRead(A1);
   Serial.print("pot: ");
   Serial.print(potValue);
   Serial.print("\n");
   delay(100);
-//  Serial.println("STARTING IN 3 SECONDS...");
-//  delay(3000);
-//  Serial.println("START!");
-//  motor1.run(motorSpeed); /* value: between -255 and 255. */
-//  motor2.run(motorSpeed); /* value: between -255 and 255. */
-//  motor3.run(motorSpeed);
-//  motor4.run(motorSpeed);
-//  delay(60000);
-//  motor1.stop();
-//  motor2.stop();
-//  motor3.stop();
-//  motor4.stop();
-//  delay(1000);
-//  motor1.run(-motorSpeed);
-//  motor2.run(-motorSpeed);
-//  motor3.run(-motorSpeed);
-//  motor4.run(-motorSpeed);
-//  delay(2000);
-//  motor1.stop();
-//  motor2.stop();
-//  motor3.stop();
-//  motor4.stop();
-//  Serial.println("DONE!");
-//  delay(3000);
+}
+
+void shoulderMove() {
+  if(runFlag == 0) {
+    displayValue();
+    Serial.println("Shoulder Move!");
+    delay(1000);
+    Serial.println("START!");
+    motor1.run(motorSpeed); /* value: between -255 and 255. */
+  //  motor2.run(motorSpeed); /* value: between -255 and 255. */
+  //  motor3.run(motorSpeed);
+  //  motor4.run(motorSpeed);
+    delay(1500);
+    motor1.stop();
+  //  motor2.stop();
+  //  motor3.stop();
+  //  motor4.stop();
+    displayValue();
+    delay(1000);
+    motor1.run(-motorSpeed);
+  //  motor2.run(-motorSpeed);
+  //  motor3.run(-motorSpeed);
+  //  motor4.run(-motorSpeed);
+    delay(1500);
+    motor1.stop();
+  //  motor2.stop();
+  //  motor3.stop();
+  //  motor4.stop();
+    displayValue();
+    runFlag = 1;
+    Serial.println("DONE!");
+  }
 }
