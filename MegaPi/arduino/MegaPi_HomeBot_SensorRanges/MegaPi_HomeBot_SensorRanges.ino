@@ -37,7 +37,7 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
-#define IMU   //Use flag when using IMU otherwhise an error will be thrown is the sensor is not connected.
+#define IMU   //Uncomment this flag when using IMU otherwise an error will be thrown if the sensor is not connected.
 //Set up MegoPi motor ports
 MeMegaPiDCMotor armGrip(PORT1A); //Arm Gripper
 MeMegaPiDCMotor armWrist(PORT1B); //Wrist
@@ -127,14 +127,14 @@ int count = 0;    //test variable
 int runFlag = 1;  //test variable
 
 //the runArray[] determines which motor functions are active (0 = inactive, 1 = active). Event if code is called by the main loop, the flag array will prevent code execution if motor is not set to "active" (1)
-int runArray[] = {1,  //runArray[0]: armGripper
-                  1,  //runArray[1]: wrist
-                  1,  //runArray[2]: elbow
-                  1,  //runArray[3]: shoulder
-                  1,  //runArray[4]: turntable
-                  1,  //runArray[5]: tailGripper
+int runArray[] = {0,  //runArray[0]: armGripper
+                  0,  //runArray[1]: wrist
+                  0,  //runArray[2]: elbow
+                  0,  //runArray[3]: shoulder
+                  0,  //runArray[4]: turntable
+                  0,  //runArray[5]: tailGripper
                   0,  //runArray[6]: drive
-                  0   //runArray[7]: sonar
+                  1   //runArray[7]: sonar
 };
 
 /***********************************
@@ -188,7 +188,7 @@ void loop()
 {
 //TODO: Add Lidar code
 
-//  armGripper(OPEN);      //GOOD
+//  armGripper(CLOSE);      //GOOD
 //  wristRotate(H, CW, 1.0);         //GOOD
 //  elbowMove();            //GOOD
 //  shoulderMove();         //GOOD
@@ -197,7 +197,7 @@ void loop()
 //  tailGripper(CLOSE);     //GOOD
 //  driveMove(10, FW, 65);  //GOOD
 //  getIMU();               //GOOD
-//  getSonar();             //GOOD
+  getSonar();             //GOOD
 //  testWrist();
 //  delay(10);
 }
