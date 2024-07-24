@@ -1,6 +1,6 @@
 /*
  * This sketch is a test program for the Adafruit Motor Shield V1 and a 28BYJ-48 Stepper Motor.
- * The 28BYJ-48 has a step angle of 5.625 degrees
+ * The 28BYJ-48 has a step angle of 11.25 degrees
  * MOTOR PORT WIRING SETUP:
  * Motor port wires from edge to edge: 
  *  Blue - outer screw terminal
@@ -10,7 +10,8 @@
  *  Pink - outer screw terminal
  *  
  *  REFERENCE:
- *  WIRING DIAGRAM AND GENERAL INFO: https://www.instructables.com/28BYJ-48-Stepper-Motor-Arduino-L293D-Motor-Shield-/
+ *  Stepper 28BYJ-48 GENERAL INFO:  https://lastminuteengineers.com/28byj48-stepper-motor-arduino-tutorial/#:~:text=According%20to%20the%20data%20sheet,*64)%20steps%20per%20revolution.
+ *                                  https://www.instructables.com/28BYJ-48-Stepper-Motor-Arduino-L293D-Motor-Shield-/
  *  ADAFRUIT PAGE FOR THE MOTOR SHIELD V1: https://learn.adafruit.com/adafruit-motor-shield/using-stepper-motors
  */
 
