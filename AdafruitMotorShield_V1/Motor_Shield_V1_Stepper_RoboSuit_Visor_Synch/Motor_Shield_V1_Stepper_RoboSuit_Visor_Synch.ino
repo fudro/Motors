@@ -51,25 +51,38 @@ void loop() {
   if(visorbuttonActive == 0 && digitalRead(visorPin) == LOW) { //Check for button press on sensor pin assigned to the visor
     visorbuttonActive = 1;
     if(visorPosition == 1) {
+      if(micPosition == 1) {
+        micbuttonActive = 1;
+        Serial.println("Mic Moving Down!");
+        motor_mic.step(micTravel, BACKWARD, DOUBLE);
+        micPosition = 0; //Set mic state to DOWN 
+      }
       Serial.println("Visor Moving Down!");
       motor_visor.step(visorTravel, FORWARD, DOUBLE);
       visorPosition = 0; //Set visor state to DOWN 
     }
     else if(visorPosition == 0) {
       Serial.println("Visor Moving Up!");
-      motor_visor.step(visorTravel, BACKWARD, DOUBLE);
-
-//      motor_visor.step(1500, BACKWARD, DOUBLE);
-//      motor_visor.step(1000, BACKWARD, MICROSTEP);
-//      motor_visor.step(2000, BACKWARD, DOUBLE);
+//      motor_visor.step(visorTravel, BACKWARD, DOUBLE);
+      
+      motor_visor.step(1800, BACKWARD, DOUBLE);
+      motor_visor.step(700, BACKWARD, MICROSTEP);  //Use MicroStep for stronger torque at the hardest part of the lifting motion
+      motor_visor.step(2000, BACKWARD, DOUBLE);
       
       visorPosition = 1; //Set visor state to UP 
+      if(micPosition == 0) {
+        micbuttonActive = 1;
+        Serial.println("Mic Moving Up!");
+        motor_mic.step(micTravel, FORWARD, DOUBLE);
+        micPosition = 1; //Set mic state to UP 
+        micbuttonActive = 0;
+      }
     }
     visorbuttonActive = 0;  //Reset button value for additional button presses
     Serial.println("Visor Button Ready!");
   }
 
-  if(micbuttonActive == 0 && digitalRead(micPin) == LOW) { //Check for button press on sensor pin assigned to the visor
+  if(micbuttonActive == 0 && visorPosition == 1 && digitalRead(micPin) == LOW) { //Check for button press on sensor pin assigned to the visor
     micbuttonActive = 1;
     if(micPosition == 1) {
       Serial.println("Mic Moving Down!");
