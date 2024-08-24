@@ -1,14 +1,24 @@
 /*
- * This sketch is a test program for the Adafruit Motor Shield V1 and a 28BYJ-48 Stepper Motor.
+ * This program uses an Adafruit Motor Shield V1 and a 28BYJ-48 Stepper Motor.
+ * Buttons connected to A0 and A5 provide INDEPENDENT motorized control of the Visor and Mic.
+ * NOTE:  The program does not explicitly account for simultaneious presses of both buttons.
+ *        However, the normal BLOCKING behavior of the stepper movement automatically prevents operation of both motors at the same time.
+ * 
+ * OPERATION:
+ * a) Press button connected to A0 to activate the visor motor. Motor direction will toggle for each press.
+ * b) Press button connected to A5 to activate the mic motor. Motor direction will toggle for each press.
+ * 
+ * STEPPER MOTOR NOTES
  * The 28BYJ-48 has a step angle of 11.25 degrees, 32 steps per revolution of the motor rotor.
  * The gear train has a ratio of 64:1 for a total of 2048 steps per revolution of the motor axle.
- * MOTOR PORT WIRING SETUP:
- * Motor port wires from edge to edge: 
- *  Blue - outer screw terminal
- *  Yellow - second from edge screw terminal
- *  Red - Power center tap
- *  Orange - second from edge screw terminal
- *  Pink - outer screw terminal
+ * 
+ * STEPPER MOTOR PORT WIRING SETUP:
+ * Motorshield port color coded wiring from edge to edge: 
+ *  Blue - outer screw terminal on the RIGHT SIDE when viewing the open face of the port
+ *  Yellow - screw terminal adjacent to the BLUE screw terminal
+ *  Red - middle screw terminal (stepper center tap)
+ *  Orange - screw terminal adjacent to PINK screw terminal
+ *  Pink - outer screw terminal on the LEFT SIDE when facing the open face of the port
  *  
  *  REFERENCE:
  *  WIRING DIAGRAM AND GENERAL INFO: https://www.instructables.com/28BYJ-48-Stepper-Motor-Arduino-L293D-Motor-Shield-/
@@ -35,13 +45,13 @@ void setup() {
   pinMode(visorPin, INPUT_PULLUP); //Butons connect to GND upon press, so set default to be pulled up.
   pinMode(micPin, INPUT_PULLUP); 
   Serial.begin(9600);   // set up Serial library at 9600 bps
-  Serial.println("Stepper Button Test!");
+  Serial.println("Robotsuit Visor and Mic Test!");
 
-  motor_visor.setSpeed(1000);  // Use to set the stepper RPM
+  motor_visor.setSpeed(1000);  // Use to set the stepper internal rotor RPM (1000 provides best performance)
   motor_visor.step(100, FORWARD, SINGLE); //(I assume this initializes the motor)
   motor_visor.release();
 
-  motor_mic.setSpeed(1000);  // Max value is 10000. Higher values do not result in a faster rotation.
+  motor_mic.setSpeed(1000);  // Max value is 1000 for best combination of speed and non-skipping under load
   motor_mic.step(100, FORWARD, SINGLE); 
   motor_mic.release();
   delay(1000);
@@ -57,15 +67,11 @@ void loop() {
     }
     else if(visorPosition == 0) {
       Serial.println("Visor Moving Up!");
-      motor_visor.step(visorTravel, BACKWARD, DOUBLE);
-
-//      motor_visor.step(1500, BACKWARD, DOUBLE);
-//      motor_visor.step(1000, BACKWARD, MICROSTEP);
-//      motor_visor.step(2000, BACKWARD, DOUBLE);
-      
+      motor_visor.step(visorTravel, BACKWARD, DOUBLE);      
       visorPosition = 1; //Set visor state to UP 
     }
     visorbuttonActive = 0;  //Reset button value for additional button presses
+    motor_visor.release();
     Serial.println("Visor Button Ready!");
   }
 
@@ -82,6 +88,7 @@ void loop() {
       micPosition = 1; //Set mic state to UP 
     }
     micbuttonActive = 0;  //Reset button value for additional button presses
+    motor_mic.release();
     Serial.println("Mic Button Ready!");
   }
 }

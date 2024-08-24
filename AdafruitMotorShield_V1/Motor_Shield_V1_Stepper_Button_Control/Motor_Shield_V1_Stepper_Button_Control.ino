@@ -1,14 +1,23 @@
 /*
- * This sketch is a test program for the Adafruit Motor Shield V1 and a 28BYJ-48 Stepper Motor.
+ * This program uses an Adafruit Motor Shield V1 to control a single 28BYJ-48 Stepper Motor via button press.
+ * 
+ * OPERATION:
+ * a) Press button connected to A0 to repeatedly rotate the stepper CCW while the button is held down.
+ * b) Press button connected to A5 to repeatedly rotate the stepper CW while the button is held down.
+ * c) Release the button and the motor will stop after its current travel motion. (Stepper movement is a BLOCKING operation - meaning that the program will not prgress until the stepper mvement is complete.)
+ * d) Pressing both buttons simultaneously will stop the motor (after its current travel motion) and reset the state of each button.
+ * 
+ * STEPPER MOTOR NOTES
  * The 28BYJ-48 has a step angle of 11.25 degrees, 32 steps per revolution of the motor rotor.
  * The gear train has a ratio of 64:1 for a total of 2048 steps per revolution of the motor axle.
- * MOTOR PORT WIRING SETUP:
- * Motor port wires from edge to edge: 
- *  Blue - outer screw terminal
- *  Yellow - second from edge screw terminal
- *  Red - Power center tap
- *  Orange - second from edge screw terminal
- *  Pink - outer screw terminal
+ * 
+ * STEPPER MOTOR PORT WIRING SETUP:
+ * Motorshield port color coded wiring from edge to edge: 
+ *  Blue - outer screw terminal on the RIGHT SIDE when viewing the open face of the port
+ *  Yellow - screw terminal adjacent to the BLUE screw terminal
+ *  Red - middle screw terminal (stepper center tap)
+ *  Orange - screw terminal adjacent to PINK screw terminal
+ *  Pink - outer screw terminal on the LEFT SIDE when facing the open face of the port
  *  
  *  REFERENCE:
  *  WIRING DIAGRAM AND GENERAL INFO: https://www.instructables.com/28BYJ-48-Stepper-Motor-Arduino-L293D-Motor-Shield-/
@@ -17,66 +26,65 @@
  */
 
 #include <AFMotor.h>
-                                //MOTOR PORT: For motor port M1 and M2 set the second parameter to 1. For motor ports M3 and M4, set the second parameter to 2.
-                                //PARAMETER FORMAT: (STEPPER_STEPS, MOTOR_SHIELD_PORT). Set stepper steps to 360 divided by the step angle for the stepper. FOR EXAMPLE: 360 / 11.25 = 32
-AF_Stepper motor_visor(32, 2);  
-AF_Stepper motor_mic(32, 1);
-int visorPin = A0;
-int visorbuttonActive = 0; 
-int visorPosition = 1;   //Default position for visor is UP = 1
-double visorTravel = 4500;   //Amount of travel the stepper should rotate
 
-int micPin = A5;
-int micbuttonActive = 0; 
-int micPosition = 1;   //Default position for visor is UP = 1
-int micTravel = 400;   //Amount of travel the stepper should rotate
+//REMEMBER TO SET THE CORRECT MOTOR PORT YOU WISH TO CONTROL:
+AF_Stepper motor(32, 1);    //MOTOR PORT: For motor port M1 and M2 set the second parameter to 1. For motor ports M3 and M4, set the second parameter to 2.
+                            //PARAMETER FORMAT: (STEPPER_STEPS, MOTOR_SHIELD_PORT). Set stepper steps to 360 divided by the step angle for the stepper. FOR EXAMPLE: 360 / 11.25 = 32
+
+int port_1 = A0;    //Set button pins
+int port_2 = A5;
+int buttonState_1 = 0;  //Set default button states
+int buttonState_2 = 0;
+int motorTravel = 10;   //Amount of travel the stepper should rotate
+
+
 
 void setup() {
-  pinMode(visorPin, INPUT_PULLUP); //Butons connect to GND upon press, so set default to be pulled up.
-  pinMode(micPin, INPUT_PULLUP); 
+  pinMode(port_1, INPUT_PULLUP); //Butons connect to GND upon press, so set default to be pulled up.
+  pinMode(port_2, INPUT_PULLUP); 
+
+  motor.setSpeed(1000);  // Use to set the stepper rotor RPM (1000 is the max)
+  motor.step(100, FORWARD, SINGLE); //(I assume this statement is to initializes the motor)
+  motor.release();
+
   Serial.begin(9600);   // set up Serial library at 9600 bps
-  Serial.println("Stepper Button Test!");
+  Serial.println("Stepper Motor Button Test!");
 
-  motor_visor.setSpeed(1000);  // Use to set the stepper RPM
-  motor_visor.step(100, FORWARD, SINGLE); //(I assume this initializes the motor)
-  motor_visor.release();
-
-  motor_mic.setSpeed(1000);  // Max value is 10000. Higher values do not result in a faster rotation.
-  motor_mic.step(100, FORWARD, SINGLE); 
-  motor_mic.release();
   delay(1000);
 }
 
 void loop() {
-  if(visorbuttonActive == 0 && digitalRead(visorPin) == LOW) { //Check for button press on sensor pin assigned to the visor
-    visorbuttonActive = 1;
-    if(visorPosition == 1) {
-      Serial.println("Visor Moving Down!");
-      motor_visor.step(visorTravel, FORWARD, DOUBLE);
-      visorPosition = 0; //Set visor state to DOWN 
+  if(digitalRead(port_1) == LOW && digitalRead(port_2) == HIGH) { //Check for button press on A0
+    if(buttonState_1 == 0) {
+      buttonState_1 = 1;    //Set buttonstate to "pressed"
+      Serial.println("Motor FORWARD!");
     }
-    else if(visorPosition == 0) {
-      Serial.println("Visor Moving Up!");
-      motor_visor.step(visorTravel, BACKWARD, DOUBLE);
-      visorPosition = 1; //Set visor state to UP 
-    }
-    visorbuttonActive = 0;  //Reset button value for additional button presses
-    Serial.println("Visor Button Ready!");
+    motor.step(motorTravel, FORWARD, DOUBLE);
   }
-
-  if(micbuttonActive == 0 && digitalRead(micPin) == LOW) { //Check for button press on sensor pin assigned to the visor
-    micbuttonActive = 1;
-    if(micPosition == 1) {
-      Serial.println("Mic Moving Down!");
-      motor_mic.step(micTravel, BACKWARD, DOUBLE);
-      micPosition = 0; //Set mic state to DOWN 
-    }
-    else if(micPosition == 0) {
-      Serial.println("Mic Moving Up!");
-      motor_mic.step(micTravel, FORWARD, DOUBLE);
-      micPosition = 1; //Set mic state to UP 
-    }
-    micbuttonActive = 0;  //Reset button value for additional button presses
-    Serial.println("Mic Button Ready!");
+  else if(buttonState_1 == 1 && digitalRead(port_1) == HIGH && digitalRead(port_2) == HIGH) { //Check for button release
+    buttonState_1 = 0;
+    motor.release();    //ALWAYS release motor when not in use to prevent overheating from constant current flow to "hold" stepper position
+    Serial.println("Motor STOPPED!");
   }
+  else if(digitalRead(port_1) == HIGH && digitalRead(port_2) == LOW) { //Check for button press on A5
+    if(buttonState_2 == 0) {
+      buttonState_2 = 1;    //Set buttonstate to "pressed"
+      Serial.println("Motor BACKWARD!");
+    }
+    motor.step(motorTravel, BACKWARD, DOUBLE);
+  }
+  else if(buttonState_2 == 1 && digitalRead(port_1) == HIGH && digitalRead(port_2) == HIGH) { //Check for button release
+    buttonState_2 = 0;
+    motor.release();    //ALWAYS release motor when not in use to prevent overheating from constant current flow to "hold" stepper position
+    Serial.println("Motor STOPPED!");
+  }
+  else if(digitalRead(port_1) == LOW && digitalRead(port_2) == LOW) {   //Stop motor if both burrons are pressed
+    if(buttonState_1 == 1 || buttonState_2 == 1) {    //Check "pressed" flags to only print to the serial port the first time
+      Serial.println("Motor STOPPED!");
+    }
+    buttonState_1 = 0;    //Reset button state flags
+    buttonState_2 = 0;
+    motor.release();    //ALWAYS release motor when not in use to prevent overheating from constant current flow to "hold" stepper position
+  }
+//  delay(100);   //Uncomment delay if you want each motor movement to feel discrete with a slight pause between each.
 }
