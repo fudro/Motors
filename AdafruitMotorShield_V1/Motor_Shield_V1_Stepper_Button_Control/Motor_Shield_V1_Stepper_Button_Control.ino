@@ -28,7 +28,7 @@
 #include <AFMotor.h>
 
 //REMEMBER TO SET THE CORRECT MOTOR PORT YOU WISH TO CONTROL:
-AF_Stepper motor(32, 1);    //MOTOR PORT: For motor port M1 and M2 set the second parameter to 1. For motor ports M3 and M4, set the second parameter to 2.
+AF_Stepper motor(32, 2);    //MOTOR PORT: For motor port M1 and M2 set the second parameter to 1. For motor ports M3 and M4, set the second parameter to 2.
                             //PARAMETER FORMAT: (STEPPER_STEPS, MOTOR_SHIELD_PORT). Set stepper steps to 360 divided by the step angle for the stepper. FOR EXAMPLE: 360 / 11.25 = 32
 
 int port_1 = A0;    //Set button pins

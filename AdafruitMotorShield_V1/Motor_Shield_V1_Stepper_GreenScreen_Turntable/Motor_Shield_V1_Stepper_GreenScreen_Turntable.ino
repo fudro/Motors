@@ -6,9 +6,9 @@
  * The turntable has two motors controlling two seprate actions: a) Turntable Rotation, b) Camera Boom.
  * a) Press each button once to rotate its associrated motor in a specific direction.
  * b) Press the same button again to change the direction of the associated motor
+ * c) Press and hold the button to make the desired motor rotate continuously in the current direction.
  * Each motor will move a finite amount for each button press and release.
- * Press and hold the button to make the desired motor rotate continuously in the current direction.
- * The button must be released to reverse the direction of movement for each motor.
+ * The button MUST be released to reverse the direction for each motor.
  * 
  * STEPPER MOTOR NOTES
  * The 28BYJ-48 has a step angle of 11.25 degrees, 32 steps per revolution of the motor rotor.
